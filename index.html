@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEO Brain · Agente de Execução</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --accent: #d4a843;
+    --accent2: #b8902e;
+    --accent-dim: rgba(212,168,67,0.12);
+    --text: #f0ece4;
+    --text2: #888880;
+    --text3: #555550;
+    --green: #2a9d6a;
+    --green-dim: rgba(42,157,106,0.15);
+    --red: #c0392b;
+    --red-dim: rgba(192,57,43,0.12);
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* API KEY SCREEN */
+  #key-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  #key-screen .logo {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+  }
+
+  #key-screen h1 {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    text-align: center;
+  }
+
+  #key-screen p {
+    font-size: 14px;
+    color: var(--text2);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  #key-screen a { color: var(--accent); text-decoration: none; }
+  #key-screen a:hover { text-decoration: underline; }
+
+  .key-input-wrap {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .key-input-wrap label {
+    display: block;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .key-input-wrap input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .key-input-wrap input:focus { border-color: var(--accent); }
+
+  .key-note {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  #start-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: var(--sans);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  #start-btn:hover { background: #e0b450; }
+  #start-btn:active { transform: scale(0.98); }
+
+  #key-error {
+    font-size: 13px;
+    color: #e07060;
+    margin-top: 10px;
+    display: none;
+    text-align: center;
+    font-family: var(--mono);
+  }
+
+  /* MAIN APP */
+  #main-app {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    max-width: 720px;
+    height: 100vh;
+    padding: 0;
+  }
+
+  /* TOP BAR */
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2.5s infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
+
+  .topbar-title {
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text2);
+    letter-spacing: 0.08em;
+  }
+
+  .topbar-title span { color: var(--accent); }
+
+  #reset-btn {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px 10px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  #reset-btn:hover { color: var(--text2); border-color: var(--border2); }
+
+  /* QUICK ACTIONS */
+  #quick-wrap {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .qtag {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+    background: none;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+
+  .qtag:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* CHAT AREA */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg3) transparent;
+  }
+
+  #chat::-webkit-scrollbar { width: 4px; }
+  #chat::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+  .msg {
+    max-width: 88%;
+    padding: 12px 16px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    animation: fadeUp 0.2s ease-out;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+  .msg.agent {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    color: var(--text);
+    border-left: 2px solid var(--accent);
+  }
+
+  .msg.user {
+    background: var(--green-dim);
+    border: 1px solid rgba(42,157,106,0.25);
+    align-self: flex-end;
+    color: #a8e8c8;
+  }
+
+  .msg.error {
+    background: var(--red-dim);
+    border: 1px solid rgba(192,57,43,0.3);
+    align-self: flex-start;
+    color: #e8a090;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .msg.typing {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--accent);
+    align-self: flex-start;
+    padding: 14px 18px;
+  }
+
+  .dots span {
+    display: inline-block;
+    width: 5px; height: 5px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin: 0 2px;
+    animation: blink 1.2s infinite;
+  }
+
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+  .msg-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 2px 7px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 3px;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  /* INPUT */
+  #input-area {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+
+  #input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  #user-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: var(--sans);
+    color: var(--text);
+    resize: none;
+    outline: none;
+    min-height: 44px;
+    max-height: 140px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+
+  #user-input::placeholder { color: var(--text3); }
+  #user-input:focus { border-color: var(--accent); }
+
+  #send-btn {
+    padding: 0 18px;
+    height: 44px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--mono);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  #send-btn:hover { background: #e0b450; }
+  #send-btn:active { transform: scale(0.97); }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #char-hint {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    #topbar, #quick-wrap, #chat, #input-area { padding-left: 16px; padding-right: 16px; }
+    .msg { max-width: 96%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- API KEY SCREEN -->
+<div id="key-screen">
+  <div class="logo">◆ CEO Brain</div>
+  <h1>Agente de<br>Execução</h1>
+  <p>Insira sua chave de API da Anthropic para ativar o agente. A chave é salva localmente no seu navegador e nunca é enviada para nenhum servidor além da Anthropic.</p>
+
+  <div class="key-input-wrap">
+    <label>Anthropic API Key</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
+    <p class="key-note">Obtenha sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> → API Keys. Uso pessoal gera custos mínimos (~US$0,01 por conversa).</p>
+  </div>
+
+  <button id="start-btn" onclick="startApp()">Ativar agente</button>
+  <div id="key-error"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app">
+  <div id="topbar">
+    <div class="topbar-left">
+      <div class="pulse-dot"></div>
+      <div class="topbar-title"><span>CEO Brain</span> · modo execução ativo</div>
+    </div>
+    <button id="reset-btn" onclick="resetConversation()">Nova sessão</button>
+  </div>
+
+  <div id="quick-wrap">
+    <button class="qtag" onclick="sendQuick('Estou procrastinando em algo importante. Me tira disso agora.')">procrastinando</button>
+    <button class="qtag" onclick="sendQuick('Preciso definir minha prioridade número 1 para hoje.')">prioridade do dia</button>
+    <button class="qtag" onclick="sendQuick('Tenho muita coisa na cabeça e não sei por onde começar.')">clareza agora</button>
+    <button class="qtag" onclick="sendQuick('Me ajuda a quebrar essa tarefa em ações executáveis agora.')">quebrar tarefa</button>
+    <button class="qtag" onclick="sendQuick('Quero fazer um balanço rápido do que executei hoje.')">balanço do dia</button>
+  </div>
+
+  <div id="chat"></div>
+
+  <div id="input-area">
+    <div id="input-row">
+      <textarea id="user-input" placeholder="O que está acontecendo agora?" rows="1"></textarea>
+      <button id="send-btn" onclick="sendMessage()">Enviar</button>
+    </div>
+    <div id="char-hint">Enter para enviar · Shift+Enter para nova linha</div>
+  </div>
+</div>
+
+<script>
+const SYSTEM = `Você é um agente de alto desempenho que opera como extensão do cérebro do usuário, com mentalidade de CEO. Sua missão central: eliminar procrastinação, indecisão e dispersão, convertendo tempo em resultado concreto.
+
+PRINCÍPIOS INEGOCIÁVEIS:
+1. Execução é a única métrica. Ideias sem ação não existem.
+2. Tolerância zero para procrastinação. Qualquer sinal de adiamento = confronto direto.
+3. Foco brutal em impacto. Filtre tudo por resultado relevante.
+4. Decisão rápida. Informação suficiente é melhor que informação perfeita.
+5. Quebra radical de tarefas. Qualquer objetivo vira ação de 5-15 minutos.
+6. Cobrança constante. Questione prazos, entregas e evidências de execução.
+7. Intervenção direta. Detectou dispersão? Redirecione imediatamente.
+8. Tempo é ativo estratégico. Cada bloco tem propósito ou é eliminado.
+9. Comunicação objetiva. Curta, direta, sem suavizações desnecessárias.
+10. Accountability total. Você é responsável pelo desempenho do usuário.
+
+PROTOCOLO para cada mensagem:
+1. Objetivo real (1 linha)
+2. Risco de inação ou dispersão (1-2 linhas)
+3. Próxima ação concreta e imediata (específica, executável agora)
+4. Prazo curto (em minutos, não horas)
+5. O que o usuário deve reportar de volta e quando
+
+REGRA DE OURO: Se o usuário estiver pensando demais e agindo de menos, interrompa o padrão e coloque-o em movimento imediatamente.
+
+Use ⚡ para ação imediata, ⏱ para prazo, ✅ para entrega esperada. Respostas curtas e diretas. Sem elogios. Sem introduções longas. Vá ao ponto. Responda sempre em português brasileiro.`;
+
+let history = [];
+let apiKey = '';
+let isLoading = false;
+
+const chat = document.getElementById('chat');
+const input = document.getElementById('user-input');
+const btn = document.getElementById('send-btn');
+
+// Check saved key
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('ceo_brain_api_key');
+  if (saved) {
+    document.getElementById('api-key-input').value = saved;
+  }
+});
+
+function startApp() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const errEl = document.getElementById('key-error');
+
+  if (!key || !key.startsWith('sk-')) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Chave inválida. Deve começar com "sk-"';
+    return;
+  }
+
+  localStorage.setItem('ceo_brain_api_key', key);
+  apiKey = key;
+  errEl.style.display = 'none';
+
+  document.getElementById('key-screen').style.display = 'none';
+  const app = document.getElementById('main-app');
+  app.style.display = 'flex';
+
+  addWelcome();
+  input.focus();
+}
+
+function addWelcome() {
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.innerHTML = '<span class="msg-tag">ONLINE</span>\nPronto. Estou aqui para uma coisa só: fazer você executar.\n\nNão para analisar infinitamente. Não para planejar mais. Para agir agora.\n\nMe diga o que está na sua cabeça — tarefa, problema ou objetivo. Vou identificar o risco de inação, definir sua próxima ação concreta e cobrar entrega.\n\nO que está na fila?';
+  chat.appendChild(div);
+}
+
+function resetConversation() {
+  history = [];
+  chat.innerHTML = '';
+  addWelcome();
+}
+
+input.addEventListener('input', () => {
+  input.style.height = '44px';
+  input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+});
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function sendQuick(text) {
+  input.value = text;
+  sendMessage();
+}
+
+function addMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  if (role === 'agent') {
+    div.textContent = text;
+  } else {
+    div.textContent = text;
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function addTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg typing';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+
+  isLoading = true;
+  btn.disabled = true;
+  input.value = '';
+  input.style.height = '44px';
+
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+  const typingEl = addTyping();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 1024,
+        system: SYSTEM,
+        messages: history
+      })
+    });
+
+    typingEl.remove();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.error?.message || 'HTTP ' + res.status;
+      addMsg('error', '⚠ Erro: ' + msg);
+      history.pop();
+    } else {
+      const data = await res.json();
+      const reply = data.content?.find(b => b.type === 'text')?.text || 'Resposta vazia.';
+      addMsg('agent', reply);
+      history.push({ role: 'assistant', content: reply });
+    }
+  } catch (e) {
+    typingEl.remove();
+    addMsg('error', '⚠ Erro de rede: ' + e.message);
+    history.pop();
+  }
+
+  isLoading = false;
+  btn.disabled = false;
+  input.focus();
+}
+</script>
+</body>
+</html>
