@@ -4931,34 +4931,47 @@ function clearInviteToken() {
    NOVO: FUNÇÕES DE ORGANIZAÇÃO
    ================================================================ */
 
+var _ensureOrgRunning = false;
+var _ensureOrgPromise = null;
+
 async function ensureOrganizationExists() {
   if (!currentUser.id) return;
 
-  try {
-    /* Fonte de verdade: organização do usuário está em organization_members */
-    var memberUrl = SUPABASE_URL + '/rest/v1/organization_members?user_id=eq.' + currentUser.id + '&select=organization_id,role&limit=1';
-    var memberRes = await fetch(memberUrl, {
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': 'Bearer ' + v40_session.access_token
-      }
-    });
+  /* Garante que apenas uma execução rode por vez.
+     Chamadas simultâneas recebem a mesma Promise. */
+  if (_ensureOrgRunning && _ensureOrgPromise) return _ensureOrgPromise;
+  _ensureOrgRunning = true;
 
-    if (memberRes.ok) {
-      var memberships = await memberRes.json();
-      if (Array.isArray(memberships) && memberships.length > 0 && memberships[0].organization_id) {
-        /* Usuário já pertence a uma organização (admin ou member) */
-        await loadUserOrganization(memberships[0].organization_id);
-        return;
+  _ensureOrgPromise = (async () => {
+    try {
+      var memberUrl = SUPABASE_URL + '/rest/v1/organization_members?user_id=eq.' + currentUser.id + '&select=organization_id,role&limit=1';
+      var memberRes = await fetch(memberUrl, {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': 'Bearer ' + v40_session.access_token
+        }
+      });
+
+      if (memberRes.ok) {
+        var memberships = await memberRes.json();
+        if (Array.isArray(memberships) && memberships.length > 0 && memberships[0].organization_id) {
+          await loadUserOrganization(memberships[0].organization_id);
+          return;
+        }
       }
+
+      /* Nenhum vínculo: primeiro acesso, cria organização como admin */
+      await createOrganizationForUser();
+
+    } catch (e) {
+      console.error('Erro ao verificar organização:', e);
+    } finally {
+      _ensureOrgRunning = false;
+      _ensureOrgPromise = null;
     }
+  })();
 
-    /* Nenhum vínculo encontrado: é o primeiro acesso, cria organização como admin */
-    await createOrganizationForUser();
-
-  } catch (e) {
-    console.error('Erro ao verificar organização:', e);
-  }
+  return _ensureOrgPromise;
 }
 
 async function createOrganizationForUser() {
@@ -5074,9 +5087,24 @@ async function loadUserOrganization(orgId) {
 }
 
 async function updateUserOrganization(orgId) {
-  /* Após a migração a PK é organization_id.
-     Um sync completo já faz o upsert correto — não precisa de PATCH separado. */
-  v40ScheduleSync();
+  try {
+    var patchUrl = SUPABASE_URL + '/rest/v1/user_data?user_id=eq.' + currentUser.id;
+    var res = await fetch(patchUrl, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + v40_session.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ organization_id: orgId })
+    });
+    
+    if (!res.ok) {
+      console.error('Erro ao atualizar organização na user_data:', res.status);
+    }
+  } catch (e) {
+    console.error('Erro ao atualizar organização:', e);
+  }
 }
 
 async function loadOrganizationMembers(orgId) {
@@ -5327,7 +5355,9 @@ function initAuth() {
     var exp = saved.expires_at || 0;
     if (exp > Date.now() / 1000) {
       v40InitUserFromSession(saved);
-      
+
+      /* ensureOrganizationExists já foi chamada dentro de v40InitUserFromSession.
+         Aguardamos a Promise existente para continuar com segurança. */
       ensureOrganizationExists().then(() => {
         document.getElementById('login-overlay').classList.add('hidden');
         showView('funil');
@@ -5493,8 +5523,9 @@ async function v40ShowDiagnostic() {
     if (testRes.status === 404) {
       lines.push('\n⚠️  PROBLEMA: Tabela "user_data" não existe no Supabase.');
       lines.push('Solução: Execute o SQL abaixo no Supabase → SQL Editor:\n');
-      lines.push('Execute o script migração_user_data_org_pk.sql no Supabase SQL Editor.');
-      lines.push('(Arquivo disponível no repositório do projeto)');
+      lines.push('CREATE TABLE IF NOT EXISTS public.user_data (\n  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,\n  data jsonb NOT NULL DEFAULT \'{}\',\n  updated_at timestamptz DEFAULT now()\n);');
+      lines.push('ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;');
+      lines.push('CREATE POLICY "users manage own data" ON public.user_data\n  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);');
     } else if (testRes.status === 401) {
       lines.push('\n⚠️  PROBLEMA: Token inválido ou expirado.');
       lines.push('Solução: Faça logout e login novamente.');
@@ -5651,10 +5682,9 @@ async function v40SyncToCloud() {
 
   v40_syncPending = false;
   var orgId = currentOrganization.id;
-  /* PK = organization_id. user_id registra quem fez o último sync (auditoria). */
   var payload = {
-    organization_id: orgId,
     user_id:         currentUser.id,
+    organization_id: orgId,
     data: {
       cards:           cards,
       columns:         COLUMNS,
@@ -5666,13 +5696,11 @@ async function v40SyncToCloud() {
       activities:      (function(){ try { return JSON.parse(localStorage.getItem('ceo_brain_activities_v32') || '[]'); } catch(e) { return []; } })(),
       trash:           (function(){ try { return JSON.parse(localStorage.getItem('ceo_brain_trash_v32') || '[]'); } catch(e) { return []; } })(),
       updated_at:      new Date().toISOString()
-    },
-    updated_at: new Date().toISOString()
+    }
   };
 
   try {
-    /* Upsert por organization_id (PK). Todos os membros da org compartilham
-       o mesmo registro. O campo user_id registra quem fez o último sync. */
+    /* Upsert único pela organização: cria se não existe, atualiza se existe */
     var baseUrl = SUPABASE_URL + '/rest/v1/user_data';
     var upsertRes = await fetch(baseUrl, {
       method: 'POST',
