@@ -5074,24 +5074,9 @@ async function loadUserOrganization(orgId) {
 }
 
 async function updateUserOrganization(orgId) {
-  try {
-    var patchUrl = SUPABASE_URL + '/rest/v1/user_data?user_id=eq.' + currentUser.id;
-    var res = await fetch(patchUrl, {
-      method: 'PATCH',
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': 'Bearer ' + v40_session.access_token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ organization_id: orgId })
-    });
-    
-    if (!res.ok) {
-      console.error('Erro ao atualizar organização na user_data:', res.status);
-    }
-  } catch (e) {
-    console.error('Erro ao atualizar organização:', e);
-  }
+  /* Após a migração a PK é organization_id.
+     Um sync completo já faz o upsert correto — não precisa de PATCH separado. */
+  v40ScheduleSync();
 }
 
 async function loadOrganizationMembers(orgId) {
@@ -5508,9 +5493,8 @@ async function v40ShowDiagnostic() {
     if (testRes.status === 404) {
       lines.push('\n⚠️  PROBLEMA: Tabela "user_data" não existe no Supabase.');
       lines.push('Solução: Execute o SQL abaixo no Supabase → SQL Editor:\n');
-      lines.push('CREATE TABLE IF NOT EXISTS public.user_data (\n  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,\n  data jsonb NOT NULL DEFAULT \'{}\',\n  updated_at timestamptz DEFAULT now()\n);');
-      lines.push('ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;');
-      lines.push('CREATE POLICY "users manage own data" ON public.user_data\n  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);');
+      lines.push('Execute o script migração_user_data_org_pk.sql no Supabase SQL Editor.');
+      lines.push('(Arquivo disponível no repositório do projeto)');
     } else if (testRes.status === 401) {
       lines.push('\n⚠️  PROBLEMA: Token inválido ou expirado.');
       lines.push('Solução: Faça logout e login novamente.');
@@ -5667,9 +5651,10 @@ async function v40SyncToCloud() {
 
   v40_syncPending = false;
   var orgId = currentOrganization.id;
+  /* PK = organization_id. user_id registra quem fez o último sync (auditoria). */
   var payload = {
-    user_id:         currentUser.id,
     organization_id: orgId,
+    user_id:         currentUser.id,
     data: {
       cards:           cards,
       columns:         COLUMNS,
@@ -5681,11 +5666,13 @@ async function v40SyncToCloud() {
       activities:      (function(){ try { return JSON.parse(localStorage.getItem('ceo_brain_activities_v32') || '[]'); } catch(e) { return []; } })(),
       trash:           (function(){ try { return JSON.parse(localStorage.getItem('ceo_brain_trash_v32') || '[]'); } catch(e) { return []; } })(),
       updated_at:      new Date().toISOString()
-    }
+    },
+    updated_at: new Date().toISOString()
   };
 
   try {
-    /* Upsert único pela organização: cria se não existe, atualiza se existe */
+    /* Upsert por organization_id (PK). Todos os membros da org compartilham
+       o mesmo registro. O campo user_id registra quem fez o último sync. */
     var baseUrl = SUPABASE_URL + '/rest/v1/user_data';
     var upsertRes = await fetch(baseUrl, {
       method: 'POST',
