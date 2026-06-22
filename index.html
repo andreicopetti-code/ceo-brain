@@ -12113,8 +12113,8 @@ function calcKpisV41(filtered) {
   var recConf     = ganhoCards.reduce(function(s, c) { return s + Number(c.value || 0); }, 0);
   var ticketMedio = ganhoCards.length > 0 ? recConf / ganhoCards.length : 0;
 
-  /* KPI 6 — Deals Parados (sem movimento há 30+ dias) */
-  var paradosCards = ativos.filter(function(c) { return cardParadoDias(c) >= 30; });
+  /* KPI 6 — Deals Parados (sem movimento há 14+ dias) */
+  var paradosCards = ativos.filter(function(c) { return cardParadoDias(c) >= 14; });
 
   return {
     totalPipeline : totalPipeline,
@@ -12202,7 +12202,7 @@ function calcKpisV41(filtered) {
       {
         icon: '⚠️', label: 'Deals Parados',
         value: k.paradosCards.length,
-        sub: k.paradosCards.length === 0 ? '✅ Nenhum parado há 30+ dias' : 'Sem movimento há 30+ dias',
+        sub: k.paradosCards.length === 0 ? '✅ Nenhum parado há 14+ dias' : 'Sem movimento há 14+ dias',
         color: paradColor
       },
     ];
