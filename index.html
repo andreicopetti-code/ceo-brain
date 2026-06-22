@@ -2040,6 +2040,21 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
         <button class="login-btn" id="btn-forgot" onclick="doForgot()">Enviar link de recuperação</button>
         <div class="login-link" onclick="v40ShowTab(&#39;login&#39;)">← Voltar ao login</div>
       </div>
+      <!-- PAINEL NOVA SENHA (recuperação via link do e-mail) -->
+      <div class="login-panel" id="panel-reset">
+        <div class="login-error" id="reset-error"></div>
+        <div class="login-success" id="reset-success"></div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Escolha uma nova senha para sua conta.</p>
+        <div class="form-group">
+          <label>Nova senha</label>
+          <input type="password" id="reset-pass" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')doResetPassword()">
+        </div>
+        <div class="form-group">
+          <label>Confirmar senha</label>
+          <input type="password" id="reset-pass2" placeholder="Repita a nova senha" onkeydown="if(event.key==='Enter')doResetPassword()">
+        </div>
+        <button class="login-btn" id="btn-reset" onclick="doResetPassword()">Salvar nova senha</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5120,14 +5135,15 @@ var pendingInviteToken = null;   // token do convite sendo processado
 
 /* ---- helpers visuais ---- */
 function v40ShowTab(tab) {
-  ['login','register','forgot'].forEach(function(t) {
-    document.getElementById('panel-' + t).classList.toggle('active', t === tab);
+  ['login','register','forgot','reset'].forEach(function(t) {
+    var panel = document.getElementById('panel-' + t);
+    if (panel) panel.classList.toggle('active', t === tab);
     var tabEl = document.getElementById('tab-' + t);
     if (tabEl) tabEl.classList.toggle('active', t === tab);
   });
-  // Esconde as abas quando estiver na tela de recuperação
+  // Esconde as abas quando estiver em telas secundárias
   var tabsEl = document.getElementById('login-tabs');
-  if (tabsEl) tabsEl.style.display = (tab === 'forgot') ? 'none' : '';
+  if (tabsEl) tabsEl.style.display = (tab === 'forgot' || tab === 'reset') ? 'none' : '';
 }
 
 function v40ShowForgot() { v40ShowTab('forgot'); }
@@ -5648,7 +5664,36 @@ function v40InitUserFromSession(session) {
 /* ---- init ---- */
 function initAuth() {
   checkInviteRoute();
-  
+
+  // ── Detectar token de recuperação de senha no hash da URL ──────────────
+  var hash = window.location.hash || '';
+  if (hash) {
+    var params = {};
+    hash.replace(/^#/, '').split('&').forEach(function(pair) {
+      var kv = pair.split('=');
+      params[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' '));
+    });
+
+    if (params.error) {
+      // Link expirado ou inválido — mostra mensagem clara no painel forgot
+      document.getElementById('login-overlay').classList.remove('hidden');
+      v40ShowTab('forgot');
+      v40SetError('forgot', 'O link de recuperação expirou ou é inválido. Solicite um novo abaixo.');
+      history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+
+    if (params.type === 'recovery' && params.access_token) {
+      // Salvar token temporário para usar na troca de senha
+      window._recoveryToken = params.access_token;
+      document.getElementById('login-overlay').classList.remove('hidden');
+      v40ShowTab('reset');
+      history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+  }
+  // ── Fim detecção de recuperação ─────────────────────────────────────────
+
   var saved = v40LoadSession();
   if (saved && saved.access_token) {
     var exp = saved.expires_at || 0;
@@ -5757,6 +5802,43 @@ async function doForgot() {
     v40SetError('forgot', 'Não foi possível enviar o e-mail. Tente novamente.');
   } finally {
     v40SetLoading('btn-forgot', false);
+  }
+}
+
+/* ---- nova senha via link de recuperação ---- */
+async function doResetPassword() {
+  var pass  = (document.getElementById('reset-pass').value  || '');
+  var pass2 = (document.getElementById('reset-pass2').value || '');
+  v40SetError('reset', '');
+
+  if (pass.length < 6)  { v40SetError('reset', 'A senha deve ter pelo menos 6 caracteres.'); return; }
+  if (pass !== pass2)   { v40SetError('reset', 'As senhas não coincidem.'); return; }
+  if (!window._recoveryToken) { v40SetError('reset', 'Token de recuperação ausente. Solicite um novo link.'); return; }
+
+  var btn = document.getElementById('btn-reset');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+  try {
+    var resp = await fetch(SUPABASE_URL + '/auth/v1/user', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + window._recoveryToken
+      },
+      body: JSON.stringify({ password: pass })
+    });
+    if (!resp.ok) {
+      var err = await resp.json();
+      throw new Error(err.msg || err.message || 'Erro ao salvar senha.');
+    }
+    window._recoveryToken = null;
+    v40SetSuccess('reset', 'Senha alterada com sucesso! Você já pode entrar.');
+    setTimeout(function() { v40ShowTab('login'); }, 2000);
+  } catch(e) {
+    v40SetError('reset', e.message || 'Não foi possível alterar a senha. Tente novamente.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Salvar nova senha'; }
   }
 }
 
