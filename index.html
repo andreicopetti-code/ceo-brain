@@ -5179,7 +5179,7 @@ async function v40AuthRequest(path, body, token) {
     body: JSON.stringify(body)
   });
   var data = await res.json();
-  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'Erro desconhecido');
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || data.error || ('HTTP ' + res.status));
   return data;
 }
 
@@ -5796,10 +5796,14 @@ async function doForgot() {
   if (!email) { v40SetError('forgot', 'Por favor, informe seu e-mail.'); return; }
   v40SetLoading('btn-forgot', true);
   try {
-    await v40AuthRequest('/recover', { email: email });
-    v40SetSuccess('forgot', 'Link enviado! Verifique sua caixa de entrada.');
+    // redirect_to aponta para o próprio app no GitHub Pages
+    var redirectTo = 'https://andreicopetti-code.github.io/ceo-brain/';
+    await v40AuthRequest('/recover', { email: email, redirect_to: redirectTo });
+    v40SetSuccess('forgot', 'Link enviado! Verifique sua caixa de entrada e clique no link.');
   } catch(e) {
-    v40SetError('forgot', 'Não foi possível enviar o e-mail. Tente novamente.');
+    // Mostrar erro real para diagnóstico
+    var msg = (e && e.message) ? e.message : 'Erro desconhecido';
+    v40SetError('forgot', 'Erro: ' + msg);
   } finally {
     v40SetLoading('btn-forgot', false);
   }
