@@ -5667,8 +5667,7 @@ function initAuth() {
   checkInviteRoute();
 
   // ── Detectar token de recuperação de senha ─────────────────────────────
-  // Supabase envia via hash (#access_token=...) OU via /verify redirect
-  // Quando o /verify redireciona, o token chega no hash da URL de destino
+  // O Supabase redireciona com #access_token=...&type=recovery no hash
   var hashStr  = (window.location.hash  || '').replace(/^#/, '');
   var queryStr = (window.location.search|| '').replace(/^\?/, '');
 
@@ -5696,7 +5695,7 @@ function initAuth() {
     return;
   }
 
-  // Fluxo via hash: #access_token=...&type=recovery (redirect do /verify)
+  // Fluxo principal: #access_token=...&type=recovery
   if (hashParams.type === 'recovery' && hashParams.access_token) {
     window._recoveryToken = hashParams.access_token;
     document.getElementById('login-overlay').classList.remove('hidden');
@@ -5834,8 +5833,7 @@ async function doForgot() {
   if (!email) { v40SetError('forgot', 'Por favor, informe seu e-mail.'); return; }
   v40SetLoading('btn-forgot', true);
   try {
-    // redirect_to aponta para o próprio app no GitHub Pages
-    var redirectTo = window.location.origin + window.location.pathname;
+    var redirectTo = 'https://andreicopetti-code.github.io/ceo-brain/index.html';
     await v40AuthRequest('/recover', { email: email, redirect_to: redirectTo });
     v40SetSuccess('forgot', 'Link enviado! Verifique sua caixa de entrada e clique no link.');
   } catch(e) {
