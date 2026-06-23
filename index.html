@@ -4535,8 +4535,9 @@ function renderCard(card, col) {
     const label   = next.tipo || next.title || 'Compromisso';
     const [y, m, d] = (next.date || '').split('-');
     const dateStr = d && m ? `${d}/${m}` : '';
-    const timeStr = next.time ? ` · ${next.time}` : '';
-    return `<div class="card-appt-row"><div class="appt-chip ${st}" style="flex:1;min-width:0;overflow:hidden;cursor:pointer" onclick="event.stopPropagation();editAppt(${card.id},${nextApptIdx},true)" title="Editar compromisso"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${icon} ${label} ${dateStr}${timeStr}</span></div></div>`;
+    const timeStr = next.time ? next.time : '';
+    const dateTime = [dateStr, timeStr].filter(Boolean).join(' · ');
+    return `<div class="card-appt-row"><div class="appt-chip ${st}" style="flex:1;min-width:0;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px" onclick="event.stopPropagation();editAppt(${card.id},${nextApptIdx},true)" title="Editar compromisso"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${icon} ${label}</span>${dateTime ? `<span style="white-space:nowrap;flex-shrink:0;opacity:.85">${dateTime}</span>` : ''}</div></div>`;
   })();
 
   /* Indicador de card parado com urgência gradual (7-13d=amber, 14-20d=laranja, 21+=vermelho) */
@@ -8885,6 +8886,7 @@ function cnpjEnviarParaLeads() {
     note:        cnae !== '—' ? 'CNAE: ' + cnae : '',
     origem:      'Consulta CNPJ',
     column:      'LEADS',
+    responsavel: (currentUser && currentUser.name) ? currentUser.name : '',
     appointments:[],
     history:     [{ date: new Date().toLocaleDateString('pt-BR'), fromCol:'—', toCol:'Leads', note:'Importado via Consulta CNPJ' }]
   };
@@ -9338,13 +9340,25 @@ function renderCnpjCard(row, cnpjFmt) {
    V39 — PREVIEW CARD (teaser gratuito) + DETALHE PAGO
    ================================================================ */
 
-/* Extrai regime mais recente como string simples para o teaser */
+/* Extrai regime mais recente como string simples para o teaser.
+   Exibe categoria genérica para instigar o usuário a consumir o crédito
+   e ver o regime completo nos dados detalhados. */
 function regimeSimples(row) {
   var regime = extractRegime(row, Object.keys(row));
   if (!regime) return '';
-  if (typeof regime === 'string') return regime.trim();
-  if (Array.isArray(regime) && regime.length > 0) return regime[0].val || '';
-  return '';
+  var raw = '';
+  if (typeof regime === 'string') raw = regime.trim();
+  else if (Array.isArray(regime) && regime.length > 0) raw = (regime[0].val || '').trim();
+  if (!raw) return '';
+  var upper = raw.toUpperCase();
+  if (upper.indexOf('SIMPLES') !== -1 || upper.indexOf('MEI') !== -1) {
+    return 'Simples Nacional';
+  }
+  if (upper.indexOf('LUCRO') !== -1 || upper.indexOf('ARBITRADO') !== -1) {
+    return 'Lucro Real ou Presumido';
+  }
+  /* Fallback: se não identificado, oculta para não entregar o dado */
+  return 'Ver dados completos';
 }
 
 /* Texto dinâmico de créditos restantes para o preview card */
