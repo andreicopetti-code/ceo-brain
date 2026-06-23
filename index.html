@@ -5395,7 +5395,6 @@ async function loadUserOrganization(orgId) {
     if (dropSettings) dropSettings.style.display = currentUserRole === 'admin' ? 'flex' : 'none';
     
     console.log('Organização carregada:', orgId, 'Role:', currentUserRole);
-    /* Garante que o filtro de responsavel reflete o role correto apos carga */
     renderBoard();
     
   } catch (e) {
@@ -5667,8 +5666,9 @@ function v40InitUserFromSession(session) {
 function initAuth() {
   checkInviteRoute();
 
-  // ── Detectar token de recuperação de senha (hash OU query string) ─────────
-  // Supabase pode enviar via hash (#access_token=...) ou via PKCE (?code=...)
+  // ── Detectar token de recuperação de senha ─────────────────────────────
+  // Supabase envia via hash (#access_token=...) OU via /verify redirect
+  // Quando o /verify redireciona, o token chega no hash da URL de destino
   var hashStr  = (window.location.hash  || '').replace(/^#/, '');
   var queryStr = (window.location.search|| '').replace(/^\?/, '');
 
@@ -5687,7 +5687,7 @@ function initAuth() {
   var hashParams  = parseUrlParams(hashStr);
   var queryParams = parseUrlParams(queryStr);
 
-  // Erro vindo da URL (link expirado etc.)
+  // Erro vindo da URL
   if (hashParams.error || queryParams.error) {
     document.getElementById('login-overlay').classList.remove('hidden');
     v40ShowTab('forgot');
@@ -5696,7 +5696,7 @@ function initAuth() {
     return;
   }
 
-  // Fluxo implícito via hash: #access_token=...&type=recovery
+  // Fluxo via hash: #access_token=...&type=recovery (redirect do /verify)
   if (hashParams.type === 'recovery' && hashParams.access_token) {
     window._recoveryToken = hashParams.access_token;
     document.getElementById('login-overlay').classList.remove('hidden');
@@ -5835,7 +5835,7 @@ async function doForgot() {
   v40SetLoading('btn-forgot', true);
   try {
     // redirect_to aponta para o próprio app no GitHub Pages
-    var redirectTo = 'https://andreicopetti-code.github.io/ceo-brain/';
+    var redirectTo = window.location.origin + window.location.pathname;
     await v40AuthRequest('/recover', { email: email, redirect_to: redirectTo });
     v40SetSuccess('forgot', 'Link enviado! Verifique sua caixa de entrada e clique no link.');
   } catch(e) {
@@ -6162,9 +6162,6 @@ function populateRespFilter() {
   var sel     = document.getElementById('filter-resp');
   var toolbar = document.getElementById('board-toolbar');
   if (!sel) return;
-
-  /* Somente Gestor (admin) ve o filtro "Ver: [Todos]".
-     Members nao precisam: o funil exibe os deals da org normalmente. */
   var isAdmin = (currentUserRole === 'admin');
   if (!isAdmin) {
     sel.style.display = 'none';
@@ -6173,11 +6170,9 @@ function populateRespFilter() {
     activeRespFilter = '';
     return;
   }
-
   sel.style.display = '';
   var lbl2 = toolbar ? toolbar.querySelector('.board-toolbar-label') : null;
   if (lbl2) lbl2.style.display = '';
-
   var vendors = [''];
   cards.forEach(function(c) {
     var r = (c.responsavel || '').trim();
