@@ -898,9 +898,9 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   .ceo-send-btn:hover { background:#1a66c0; }
   .ceo-send-btn:disabled { opacity:.45;cursor:not-allowed; }
   .ceo-send-btn svg { width:15px;height:15px; }
-  .ceo-quick-chips { padding:0 24px 10px;background:var(--surface);border-top:1px solid var(--border);overflow-x:auto; }
+  .ceo-quick-chips { padding:8px 24px 10px;background:var(--surface);border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px; }
   .ceo-quick-chips::-webkit-scrollbar { display:none; }
-  .ceo-quick-chips-inner { display:flex;gap:6px;padding-top:10px;flex-wrap:nowrap; }
+  .ceo-quick-chips-inner { display:contents; }
   .ceo-chip { padding:5px 13px; background:var(--surface2); border:1px solid var(--border2); border-radius:20px; font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap; }
   .ceo-chip:hover { background:var(--blue-bg);color:var(--blue-dark);border-color:#B6D4F5; }
 
@@ -3681,16 +3681,22 @@ Espero que esteja bem. Gostaria de apresentar..."></textarea>
     <!-- Quick chips -->
     <div class="ceo-quick-chips">
       <div class="ceo-quick-chips-inner">
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais deals estão em risco de se perder?&#39;)">⚠️ Deals em risco</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Qual é a taxa de conversão por etapa do funil?&#39;)">📊 Conversão por etapa</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Liste os negócios com Perfil Estratégico e Grande com mais dias parados.&#39;)">🔴 Estratégicos parados</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais compromissos estão atrasados ou pendentes?&#39;)">📅 Compromissos pendentes</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Faça um diagnóstico geral do pipeline comercial. Aponte os principais riscos, oportunidades e recomendações prioritárias.&#39;)">🔍 Diagnóstico geral</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais negócios com Perfil Estratégico ou Grande têm maior chance de fechamento imediato? O que devo fazer em cada um?&#39;)">🎯 Fechamento prioritário</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais deals estão em risco de se perder? Qual a causa provável e o que posso fazer para recuperá-los?&#39;)">⚠️ Deals em risco</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Liste os negócios com Perfil Estratégico e Grande com mais dias parados. O que está travando cada um?&#39;)">🔴 Estratégicos parados</span>
         <span class="ceo-chip" onclick="ceoAgendaSemana()">🗓️ Agenda da semana</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Faça um diagnóstico geral do pipeline comercial.&#39;)">🔍 Diagnóstico geral</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais negócios com Perfil Estratégico ou Grande têm maior chance de fechamento imediato?&#39;)">🎯 Fechamento prioritário</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais deals devo descartar do pipeline agora? Justifique com dados concretos.&#39;)">🗑️ Descartar agora</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Existe concentração de risco no pipeline? Quais deals, se perdidos, comprometem a meta?&#39;)">💥 Concentração de risco</span>
-        <span class="ceo-chip" onclick="ceoAsk(&#39;Avalie a velocidade do funil. Onde os deals estão travando? Qual etapa é o maior gargalo?&#39;)">⏱️ Velocidade do funil</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais compromissos estão atrasados ou pendentes? Como reorganizo as prioridades desta semana?&#39;)">📅 Compromissos pendentes</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Avalie a velocidade do funil. Onde os deals estão travando? Qual etapa é o maior gargalo e como destravar?&#39;)">⏱️ Velocidade do funil</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Qual é a taxa de conversão por etapa do funil? Onde estou perdendo mais negócios e por quê?&#39;)">📊 Conversão por etapa</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Existe concentração de risco no pipeline? Quais deals, se perdidos, comprometem a meta mensal?&#39;)">💥 Concentração de risco</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais deals devo descartar do pipeline agora? Justifique com dados concretos e sugira como liberar energia da equipe.&#39;)">🗑️ Descartar agora</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Estou no caminho certo para bater a meta do mês? Quanto falta e quais deals podem virar receita confirmada até o fim do período?&#39;)">🏁 Meta do mês</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais são os próximos 3 movimentos que eu deveria fazer no pipeline para maximizar receita nas próximas 2 semanas?&#39;)">🚀 Próximos movimentos</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Analise o perfil dos deals perdidos. Existe um padrão? O que posso mudar no processo de vendas para melhorar o resultado?&#39;)">📉 Análise de perdas</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Qual é o ticket médio e o ciclo médio de vendas atual? Estão dentro do esperado ou há algo a corrigir?&#39;)">🎫 Ticket e ciclo médio</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Quais deals estão há mais tempo sem nenhuma atividade registrada? Me dê um plano de reativação para cada um.&#39;)">😴 Deals sem atividade</span>
+        <span class="ceo-chip" onclick="ceoAsk(&#39;Se eu pudesse fechar apenas 3 negócios este mês, quais deveriam ser e por quê? Baseie-se em potencial, probabilidade e perfil.&#39;)">🏆 Top 3 para fechar</span>
       </div>
     </div>
 
