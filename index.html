@@ -506,9 +506,11 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   .settings-body { padding: 28px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
 
   /* Two-column layout for settings */
-  .settings-two-col { flex-direction: row !important; align-items: flex-start; gap: 24px; max-width: 1260px; margin: 0 auto; }
+  .settings-two-col { flex-direction: row !important; flex-wrap: wrap; align-items: flex-start; gap: 24px; max-width: 1260px; margin: 0 auto; }
   .settings-left  { flex: 0 0 500px; min-width: 400px; display: flex; flex-direction: column; gap: 24px; }
   .settings-right { flex: 1; min-width: 320px; }
+  /* Seção de membros ocupa toda a largura acima das duas colunas */
+  #members-settings-section { flex: 0 0 100% !important; min-width: 100%; }
   @media (max-width: 960px) {
     .settings-two-col { flex-direction: column !important; }
     .settings-left { flex: none; width: 100%; min-width: 0; }
@@ -1438,7 +1440,71 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   .btn-close-invite:hover {
     background: var(--border);
   }
-  
+
+  /* ── Gestão de Membros (Settings) ───────────────────────────────── */
+  .members-list { display: flex; flex-direction: column; }
+  .member-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .member-row:last-child { border-bottom: none; }
+  .member-row:hover { background: var(--surface2); }
+  .member-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0; letter-spacing: .5px;
+  }
+  .member-avatar.admin-avatar { background: #7c3aed; }
+  .member-info { flex: 1; min-width: 0; }
+  .member-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .member-email { font-size: 11px; color: var(--text3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .member-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .role-badge {
+    font-size: 11px; font-weight: 600; padding: 3px 9px;
+    border-radius: 20px; border: 1px solid;
+    cursor: default; white-space: nowrap;
+  }
+  .role-badge.admin  { background: #f3e8ff; color: #7c3aed; border-color: #d8b4fe; }
+  .role-badge.member { background: var(--blue-bg); color: var(--blue-dark); border-color: #B6D4F5; }
+  .btn-role-toggle {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 7px; border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--text2);
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+  }
+  .btn-role-toggle:hover { background: var(--surface); color: var(--text); border-color: var(--text3); }
+  .btn-remove-member {
+    width: 28px; height: 28px; border-radius: 7px; border: 1px solid transparent;
+    background: transparent; color: var(--text3); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: all .15s; flex-shrink: 0;
+  }
+  .btn-remove-member:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+  .members-empty {
+    padding: 28px 20px; text-align: center;
+    font-size: 13px; color: var(--text3);
+  }
+  .pending-invites-list { display: flex; flex-direction: column; }
+  .pending-invite-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 20px; border-bottom: 1px solid var(--border);
+  }
+  .pending-invite-row:last-child { border-bottom: none; }
+  .pending-invite-token { font-size: 12px; color: var(--text2); font-family: monospace; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pending-invite-exp { font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .btn-cancel-invite {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 7px; border: 1px solid #fca5a5;
+    background: #fee2e2; color: #dc2626;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+  }
+  .btn-cancel-invite:hover { background: #fecaca; }
+  .members-section-invite-row {
+    padding: 14px 20px; display: flex; justify-content: flex-end;
+  }
+
   .global-message {
     position: fixed;
     top: 20px;
@@ -3011,6 +3077,31 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 <div class="settings-panel" id="settings-panel">
   <div class="settings-body settings-two-col">
 
+    <!-- FAIXA SUPERIOR: Gestão de Membros (largura total, só admin vê) -->
+    <div id="members-settings-section" style="display:none; width:100%; margin-bottom:0; grid-column:1/-1;">
+      <div class="settings-section" style="margin-bottom:0">
+        <div class="settings-section-header">
+          <div>
+            <div class="settings-section-title">👥 Membros da Organização</div>
+            <div class="settings-section-desc">Gerencie quem tem acesso ao CEO Brain, altere funções e convide novos usuários.</div>
+          </div>
+          <button class="btn-primary" style="font-size:12px;padding:7px 14px;flex-shrink:0" onclick="generateInviteToken()">+ Convidar</button>
+        </div>
+        <div class="members-list" id="members-settings-list"></div>
+      </div>
+
+      <!-- Convites pendentes (aparece somente se houver) -->
+      <div class="settings-section" id="pending-invites-section" style="margin-top:16px;display:none">
+        <div class="settings-section-header">
+          <div>
+            <div class="settings-section-title">📨 Convites Pendentes</div>
+            <div class="settings-section-desc">Links gerados ainda não utilizados. Clique em Cancelar para invalidá-los.</div>
+          </div>
+        </div>
+        <div class="pending-invites-list" id="pending-invites-list"></div>
+      </div>
+    </div>
+
     <!-- LEFT: Etapas do funil -->
     <div class="settings-left">
       <div class="settings-section">
@@ -4258,11 +4349,12 @@ function isCardParado(card) {
 }
 
 function renderStats() {
-  const ganhoCards = cards.filter(c=>c.column==='GANHO');
+  const _sc        = myCards();
+  const ganhoCards = _sc.filter(c=>c.column==='GANHO');
   const ganho      = ganhoCards.reduce((s,c)=>s+Number(c.value||0),0);
   const ganhos     = ganhoCards.length;
-  const perdidos   = cards.filter(c=>c.column==='PERDIDO').length;
-  const ativos     = cards.filter(c=>c.column!=='GANHO'&&c.column!=='PERDIDO');
+  const perdidos   = _sc.filter(c=>c.column==='PERDIDO').length;
+  const ativos     = _sc.filter(c=>c.column!=='GANHO'&&c.column!=='PERDIDO');
   const decisivos  = ganhos + perdidos;
   const wr = decisivos>0 ? ((ganhos/decisivos)*100).toFixed(1)+'%' : '—';
   const wrFrac = decisivos>0 ? `${ganhos} de ${decisivos} decisivos` : 'Sem deals decisivos ainda';
@@ -4273,7 +4365,7 @@ function renderStats() {
   const paradosOk = parados === 0;
 
   /* Compromissos atrasados */
-  const atrasados = cards.reduce((n,c) =>
+  const atrasados = _sc.reduce((n,c) =>
     n + (c.appointments||[]).filter(a => !a.cumprido && apptStatus(a)==='overdue').length, 0);
   const atrasadosOk = atrasados === 0;
 
@@ -4294,7 +4386,7 @@ function renderStats() {
   const convGeral     = convGeralNum.toFixed(1).replace('.', ',');
   const ticketMedio   = ganhos > 0 ? fmt(Math.round(ganho / ganhos)) : '—';
 
-  const ganhoCardsDate = cards.filter(c => c.column === 'GANHO' && c.createdAt);
+  const ganhoCardsDate = _sc.filter(c => c.column === 'GANHO' && c.createdAt);
   let cicloMedio = 0;
   if (ganhoCardsDate.length > 0) {
     const now = Date.now();
@@ -4306,7 +4398,7 @@ function renderStats() {
 
   const kpiCards = [
     {
-      label: 'Total de deals', val: cards.length,
+      label: 'Total de deals', val: _sc.length,
       trend: 'neutral', trendTxt: `${ativosCount} ativo${ativosCount !== 1 ? 's' : ''}`,
       iconBg: 'var(--blue-bg)', iconColor: 'var(--blue)',
       icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 9h2v11H5zm4-5h2v16H9zm4 7h2v9h-2zm4-4h2v13h-2z"/></svg>`
@@ -4370,7 +4462,8 @@ function renderStats() {
 /* ---- BOARD ---- */
 function renderBoard() {
   const q = document.getElementById('search').value.toLowerCase();
-  const fil0 = q ? cards.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.contact||'').toLowerCase().includes(q)||(c.cnpj||'').includes(q)||(c.cpf||'').includes(q)) : cards;
+  const _vis = myCards();
+  const fil0 = q ? _vis.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.contact||'').toLowerCase().includes(q)||(c.cnpj||'').includes(q)||(c.cpf||'').includes(q)) : _vis;
   const fil  = activeRespFilter ? fil0.filter(c => (c.responsavel||'') === activeRespFilter) : fil0;
   populateRespFilter();
 
@@ -4418,7 +4511,7 @@ function renderBoard() {
   }).join('');
 
   /* Onboarding empty state */
-  const isEmpty = cards.length === 0;
+  const isEmpty = myCards().length === 0;
   document.getElementById('board-empty').classList.toggle('show', isEmpty && !q);
   document.getElementById('board').style.display = isEmpty && !q ? 'none' : 'flex';
 
@@ -4522,7 +4615,7 @@ function renderCard(card, col) {
     ondragleave="onCardDragLeave(${card.id})"
     onclick="onCardClick(event,${card.id})"
     style="border-left-color:${cardParado && card.column!=='GANHO' ? 'var(--red)' : borderColor}">
-    <div class="card-top"><div class="card-info"><div class="card-name">${nameHtml}</div>${contactLine}${doc}</div><div class="card-top-right">${badge}${scoreBadge}<button class="card-delete-btn" onclick="event.stopPropagation();deleteCardDirect(${card.id})" title="Apagar registro">✕</button></div></div>
+    <div class="card-top"><div class="card-info"><div class="card-name">${nameHtml}</div>${contactLine}${doc}</div><div class="card-top-right">${badge}${scoreBadge}${(currentUserRole === 'admin' || !currentUser || card.responsavel === currentUser.name || card.createdBy === currentUser.id) ? `<button class="card-delete-btn" onclick="event.stopPropagation();deleteCardDirect(${card.id})" title="Apagar registro">✕</button>` : ''}</div></div>
     ${note}
     ${tagsHtml}
     <div class="card-footer">${valueDisplay}${stageDateHtml}</div>
@@ -4619,6 +4712,17 @@ function onDrop(e, colId) {
 
   const dragged = cards.find(c => c.id === dragId);
   if (!dragged) { dragId = null; return; }
+
+  /* Verifica permissão: member só pode mover seus próprios cards */
+  if (currentUserRole === 'member' && currentUser) {
+    var isMine = (dragged.responsavel === currentUser.name || dragged.createdBy === currentUser.id);
+    if (!isMine) {
+      showToast('⚠️ Você só pode mover deals atribuídos a você.');
+      dragId = null; dropTargetId = null;
+      renderBoard();
+      return;
+    }
+  }
 
   /* V25: Intercept drops into PERDIDO column */
   if (colId === 'PERDIDO' && dragged.column !== 'PERDIDO' && dragged.column !== 'GANHO') {
@@ -4748,6 +4852,22 @@ function openNewCard(colId) {
   if (emailBtn) emailBtn.style.display = 'none';
   openModal('overlay-card');
   document.getElementById('modal-card').scrollTop = 0;
+
+  /* Para member: pré-preenche responsável com o próprio nome e bloqueia o campo */
+  var respSel = document.getElementById('f-responsavel');
+  if (respSel) {
+    if (currentUserRole === 'member' && currentUser && currentUser.name) {
+      populateResponsavelSelect(currentUser.name);
+      respSel.disabled = true;
+    } else {
+      populateResponsavelSelect('');
+      respSel.disabled = false;
+    }
+  }
+  /* Habilitar botão Salvar (sem restrição em novo card) */
+  var saveBtn = document.querySelector('#overlay-card .btn-primary');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = ''; saveBtn.title = ''; }
+
   setTimeout(()=>document.getElementById('f-cnpj').focus(), 200);
 }
 
@@ -4803,8 +4923,11 @@ function openEditCard(id) {
     document.getElementById('history-section').style.display='none';
   }
 
-  document.getElementById('btn-delete').style.display      = 'block';
-  document.getElementById('btn-schedule').style.display    = 'block';
+  /* Apenas admin pode excluir; member só pode excluir seus próprios cards */
+  var canDelete = (currentUserRole === 'admin') ||
+    (currentUser && (c.responsavel === currentUser.name || c.createdBy === currentUser.id));
+  document.getElementById('btn-delete').style.display   = canDelete ? 'block' : 'none';
+  document.getElementById('btn-schedule').style.display = 'block';
   // Mostrar "Ver na agenda" somente se o deal tiver compromissos
   const hasAppts = (c.appointments||[]).length > 0;
   const btnAgenda = document.getElementById('btn-view-agenda');
@@ -4860,6 +4983,20 @@ function openEditCard(id) {
   populateResponsavelSelect(c.responsavel || '');
   v25Tags = [...(c.tags || [])];
   renderTagsWrap();
+
+  /* Permissões: member só edita seus próprios cards */
+  var cardBelongsToMe = !currentUser ||
+    currentUserRole === 'admin' ||
+    (c.responsavel === currentUser.name || c.createdBy === currentUser.id);
+  var saveBtn = document.querySelector('#overlay-card .btn-primary');
+  if (saveBtn) {
+    saveBtn.disabled = !cardBelongsToMe;
+    saveBtn.title = cardBelongsToMe ? '' : 'Você não pode editar deals de outros membros';
+    saveBtn.style.opacity = cardBelongsToMe ? '' : '0.45';
+  }
+  /* Bloquear campo responsavel para members (não podem reatribuir) */
+  var respSel = document.getElementById('f-responsavel');
+  if (respSel) respSel.disabled = (currentUserRole !== 'admin');
 }
 
 function saveCard() {
@@ -4896,6 +5033,16 @@ function saveCard() {
   };
 
   if(editingId) {
+    /* Verifica permissão: member só pode editar cards atribuídos a ele */
+    if (currentUserRole === 'member' && currentUser) {
+      var existing = cards.find(function(c) { return c.id === editingId; });
+      var isMine = existing && (existing.responsavel === currentUser.name || existing.createdBy === currentUser.id);
+      if (!isMine) {
+        showToast('⚠️ Você só pode editar deals atribuídos a você.');
+        closeModal('overlay-card');
+        return;
+      }
+    }
     cards = cards.map(c=>{
       if(c.id!==editingId) return c;
       const hist = c.history||[];
@@ -4926,7 +5073,7 @@ function saveCard() {
     if (updatedCard) v34CheckAutomations(updatedCard, base, false);
   } else {
     const newId = nextId++;
-    const newCard = {id:newId, ...base, appointments:[], history:[], stageEnteredAt: new Date().toISOString().slice(0,10)};
+    const newCard = {id:newId, ...base, appointments:[], history:[], stageEnteredAt: new Date().toISOString().slice(0,10), createdBy: (currentUser && currentUser.id) || null};
     cards.push(newCard);
     /* V32: log de criação */
     v32Log(newId, 'create', {});
@@ -4939,6 +5086,13 @@ function saveCard() {
 function deleteCard() {
   if(!editingId) return;
   var c = cards.find(function(x){ return x.id === editingId; });
+  /* Verifica permissão: admin pode deletar qualquer card; member só os seus */
+  var canDelete = (currentUserRole === 'admin') ||
+    (currentUser && c && (c.responsavel === currentUser.name || c.createdBy === currentUser.id));
+  if (!canDelete) {
+    showToast('⚠️ Você só pode excluir deals atribuídos a você.');
+    return;
+  }
   var nome = c ? (c.fantasia || c.name || 'este registro') : 'este registro';
   showConfirm('Mover "' + nome + '" para a lixeira?\nVocê poderá restaurá-lo em até 30 dias.', function() {
     v32SoftDelete(editingId);
@@ -5128,6 +5282,30 @@ var v40_session = null;   // token JWT da sessão atual
    NOVO: VARIÁVEIS DE ORGANIZAÇÃO E PAPÉIS
    ================================================================ */
 var currentOrganization = null;  // { id, name, owner_id, created_at }
+
+/* Retorna apenas os cards visíveis para o usuário logado.
+   Admin vê tudo. Member vê só os seus (createdBy, responsavel ou email). */
+function myCards() {
+  if (currentUserRole !== 'member' || !currentUser) return cards;
+  var uid   = currentUser.id;
+  var name  = (currentUser.name  || '').trim().toLowerCase();
+  var email = (currentUser.email || '').trim().toLowerCase();
+  /* Prefixo do email (parte antes do @) como fallback extra */
+  var emailPrefix = email ? email.split('@')[0] : '';
+  return cards.filter(function(c) {
+    /* 1. Criado por este usuário (mais confiável) */
+    if (uid && c.createdBy === uid) return true;
+    var resp = (c.responsavel || '').trim().toLowerCase();
+    if (!resp) return false;
+    /* 2. Responsável bate com o nome completo */
+    if (name && resp === name) return true;
+    /* 3. Responsável bate com o email completo */
+    if (email && resp === email) return true;
+    /* 4. Responsável bate com o prefixo do email */
+    if (emailPrefix && resp === emailPrefix) return true;
+    return false;
+  });
+}
 var currentUserRole = null;      // 'admin' ou 'member'
 var organizationMembers = [];    // array de members da org
 var inviteTokens = [];           // array de convites ativos
@@ -5425,6 +5603,8 @@ async function updateUserOrganization(orgId) {
 
 async function loadOrganizationMembers(orgId) {
   try {
+    /* Tenta primeiro a view enriquecida (com email/nome) — requer migração SQL.
+       Fallback automático para a tabela base caso a view não exista. */
     var url = SUPABASE_URL + '/rest/v1/organization_members?organization_id=eq.' + orgId;
     var res = await fetch(url, {
       headers: {
@@ -5434,11 +5614,208 @@ async function loadOrganizationMembers(orgId) {
     });
     
     if (res.ok) {
-      organizationMembers = await res.json();
+      var members = await res.json();
+      /* Enriquecer: para o usuário logado, injeta email/nome da sessão */
+      if (Array.isArray(members)) {
+        members = members.map(function(m) {
+          if (currentUser && m.user_id === currentUser.id) {
+            return Object.assign({}, m, {
+              email: m.email || currentUser.email || '',
+              name:  m.name  || currentUser.name  || ''
+            });
+          }
+          return m;
+        });
+      }
+      organizationMembers = Array.isArray(members) ? members : [];
       console.log('Membros carregados:', organizationMembers.length);
     }
   } catch (e) {
     console.error('Erro ao carregar membros da organização:', e);
+  }
+}
+
+/* ── Renderiza a seção de membros nas Configurações ───────────────── */
+function renderMembersSettings() {
+  var section = document.getElementById('members-settings-section');
+  if (!section) return;
+
+  /* Só admin enxerga a seção */
+  if (currentUserRole !== 'admin') {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  var list = document.getElementById('members-settings-list');
+  if (!list) return;
+
+  if (!organizationMembers || organizationMembers.length === 0) {
+    list.innerHTML = '<div class="members-empty">Nenhum membro encontrado.</div>';
+    renderPendingInvites();
+    return;
+  }
+
+  list.innerHTML = organizationMembers.map(function(m) {
+    var isMe = (currentUser && m.user_id === currentUser.id);
+    var isAdmin = (m.role === 'admin');
+    var email = m.email || m.user_email || (isMe && currentUser ? currentUser.email : '') || '';
+    var name  = m.name  || m.user_name  || (isMe && currentUser ? currentUser.name  : '')
+              || (email ? email.split('@')[0] : 'Usuário #' + (m.user_id || '').slice(0, 6));
+    var initials = name.split(' ').map(function(w){ return w[0] || ''; }).slice(0, 2).join('').toUpperCase() || 'U';
+
+    var roleBadge = isAdmin
+      ? '<span class="role-badge admin">Gestor</span>'
+      : '<span class="role-badge member">Membro</span>';
+
+    /* Não permite alterar o próprio role */
+    var roleBtn = !isMe
+      ? '<button class="btn-role-toggle" onclick="toggleMemberRole(\'' + m.id + '\',\'' + m.role + '\')">'
+        + (isAdmin ? 'Tornar Membro' : 'Tornar Gestor')
+        + '</button>'
+      : '<span style="font-size:11px;color:var(--text3)">(você)</span>';
+
+    /* Não permite remover a si mesmo */
+    var removeBtn = !isMe
+      ? '<button class="btn-remove-member" title="Remover membro" onclick="removeMember(\'' + m.id + '\',\'' + name.replace(/'/g, "\\'") + '\')">'
+        + '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>'
+        + '</button>'
+      : '';
+
+    return '<div class="member-row">'
+      + '<div class="member-avatar' + (isAdmin ? ' admin-avatar' : '') + '">' + initials + '</div>'
+      + '<div class="member-info">'
+      + '<div class="member-name">' + name + '</div>'
+      + '<div class="member-email">' + email + '</div>'
+      + '</div>'
+      + '<div class="member-actions">'
+      + roleBadge
+      + roleBtn
+      + removeBtn
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  renderPendingInvites();
+}
+
+function renderPendingInvites() {
+  var section = document.getElementById('pending-invites-section');
+  var list = document.getElementById('pending-invites-list');
+  if (!section || !list) return;
+
+  var now = new Date();
+  var validos = (inviteTokens || []).filter(function(t) {
+    return !t.used && new Date(t.expires_at) > now;
+  });
+
+  if (validos.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  var baseUrl = window.location.origin + window.location.pathname;
+
+  list.innerHTML = validos.map(function(t) {
+    var exp = new Date(t.expires_at);
+    var expStr = exp.toLocaleDateString('pt-BR') + ' às ' + exp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    var shortToken = t.token ? (t.token.slice(0, 12) + '…') : '—';
+    var inviteUrl = baseUrl + '#/invite/' + t.token;
+    return '<div class="pending-invite-row">'
+      + '<span class="pending-invite-token" title="' + inviteUrl + '">' + shortToken + '</span>'
+      + '<span class="pending-invite-exp">Expira ' + expStr + '</span>'
+      + '<button class="btn-copy-small" title="Copiar link" onclick="copyInviteLink(\'' + inviteUrl + '\')" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap">Copiar</button>'
+      + '<button class="btn-cancel-invite" onclick="cancelInvite(\'' + t.id + '\')">Cancelar</button>'
+      + '</div>';
+  }).join('');
+}
+
+function copyInviteLink(url) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      showSuccess('Link copiado!');
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showSuccess('Link copiado!');
+  }
+}
+
+async function toggleMemberRole(memberId, currentRole) {
+  if (currentUserRole !== 'admin') return;
+  var newRole = currentRole === 'admin' ? 'member' : 'admin';
+  var label = newRole === 'admin' ? 'Gestor' : 'Membro';
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/organization_members?id=eq.' + memberId, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + v40_session.access_token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ role: newRole })
+    });
+    if (!res.ok) { showError('Não foi possível alterar a função do membro.'); return; }
+    /* Atualiza localmente */
+    organizationMembers = organizationMembers.map(function(m) {
+      return m.id === memberId ? Object.assign({}, m, { role: newRole }) : m;
+    });
+    renderMembersSettings();
+    showSuccess('Função alterada para ' + label + '.');
+  } catch (e) {
+    showError('Erro ao alterar função: ' + e.message);
+  }
+}
+
+async function removeMember(memberId, memberName) {
+  showConfirm(
+    'Remover "' + memberName + '" da organização? O acesso será revogado imediatamente.',
+    async function() {
+      try {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/organization_members?id=eq.' + memberId, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Authorization': 'Bearer ' + v40_session.access_token
+          }
+        });
+        if (!res.ok) { showError('Não foi possível remover o membro.'); return; }
+        organizationMembers = organizationMembers.filter(function(m) { return m.id !== memberId; });
+        renderMembersSettings();
+        showSuccess(memberName + ' foi removido da organização.');
+      } catch (e) {
+        showError('Erro ao remover membro: ' + e.message);
+      }
+    },
+    { label: 'Remover', danger: true }
+  );
+}
+
+async function cancelInvite(tokenId) {
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/invite_tokens?id=eq.' + tokenId, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + v40_session.access_token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ used: true })
+    });
+    if (!res.ok) { showError('Não foi possível cancelar o convite.'); return; }
+    inviteTokens = inviteTokens.filter(function(t) { return t.id !== tokenId; });
+    renderPendingInvites();
+    showSuccess('Convite cancelado.');
+  } catch (e) {
+    showError('Erro ao cancelar convite: ' + e.message);
   }
 }
 
@@ -5506,6 +5883,7 @@ async function generateInviteToken() {
     displayInviteModal(inviteUrl, token);
     
     await loadInviteTokens();
+    renderPendingInvites();
     
   } catch (e) {
     showError('Erro ao gerar convite: ' + e.message);
@@ -6562,6 +6940,7 @@ function showView(view) {
 function renderSettings() {
   initGoalFields();
   renderVendorsList();
+  renderMembersSettings();
   const list = document.getElementById('col-settings-list');
   list.innerHTML = COLUMNS.map((col, i) => {
     const count  = cards.filter(c => c.column === col.id).length;
@@ -6785,7 +7164,7 @@ function renderContacts() {
   const ufFil  = document.getElementById('ct-uf')     ? document.getElementById('ct-uf').value     : '';
   const origemFil = document.getElementById('ct-origem') ? document.getElementById('ct-origem').value : '';
 
-  let list = cards.filter(c => {
+  let list = myCards().filter(c => {
     if (type   && c.type    !== type)   return false;
     if (stage  && c.column  !== stage)  return false;
     if (setor  && c.setor   !== setor)  return false;
@@ -6923,7 +7302,7 @@ let ceoInitialized  = false;
 /* ---- Extrai deals parados (>7 dias sem atividade) ---- */
 function buildDealsParados() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
-  return cards.filter(c => {
+  return myCards().filter(c => {
     if (c.column === 'GANHO' || c.column === 'PERDIDO') return false;
     const appts = (c.appointments || []).filter(a => !a.cumprido);
     if (appts.length === 0) return true;
@@ -6988,10 +7367,11 @@ function checkApiKey() {
 }
 
 function buildFunnelContext() {
-  const total    = cards.length;
-  const ganho    = cards.filter(c => c.column === 'GANHO');
-  const perdido  = cards.filter(c => c.column === 'PERDIDO');
-  const ativos   = cards.filter(c => c.column !== 'GANHO' && c.column !== 'PERDIDO');
+  const _mc      = myCards();
+  const total    = _mc.length;
+  const ganho    = _mc.filter(c => c.column === 'GANHO');
+  const perdido  = _mc.filter(c => c.column === 'PERDIDO');
+  const ativos   = _mc.filter(c => c.column !== 'GANHO' && c.column !== 'PERDIDO');
 
   const receitaConfirmada = ganho.reduce((s,c) => s + Number(c.value||0), 0);
   const potencialAberto   = ativos.reduce((s,c) => s + (getTier(c.tier)?.mid||0), 0);
@@ -7009,7 +7389,7 @@ function buildFunnelContext() {
   const semTier = ativos.filter(c => !c.tier).length;
 
   const porEtapa = COLUMNS.map(col => {
-    const cc = cards.filter(c => c.column === col.id);
+    const cc = _mc.filter(c => c.column === col.id);
     const recReal = col.id === 'GANHO' ? cc.reduce((s,c) => s + Number(c.value||0), 0) : 0;
     const potEst  = col.id !== 'GANHO' && col.id !== 'PERDIDO'
       ? cc.reduce((s,c) => s + (getTier(c.tier)?.mid||0), 0) : 0;
@@ -7018,7 +7398,7 @@ function buildFunnelContext() {
 
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   let atrasados = 0, hoje_count = 0, futuros = 0;
-  cards.forEach(c => { (c.appointments||[]).forEach(a => {
+  _mc.forEach(c => { (c.appointments||[]).forEach(a => {
     if (a.cumprido) return;
     const d = new Date(a.date + 'T00:00:00');
     if (d < hoje) atrasados++; else if (d.getTime()===hoje.getTime()) hoje_count++; else futuros++;
@@ -7065,7 +7445,7 @@ function buildFunnelContext() {
   const motivosPerda = Object.entries(lossMap).sort((a,b)=>b[1]-a[1]).map(([motivo,qtd])=>({motivo,qtd}));
 
   const vendorMap = {};
-  cards.forEach(c => { const v = c.responsavel || 'Não atribuído'; vendorMap[v] = (vendorMap[v]||0)+1; });
+  myCards().forEach(c => { const v = c.responsavel || 'Não atribuído'; vendorMap[v] = (vendorMap[v]||0)+1; });
   const porVendedor = Object.entries(vendorMap).sort((a,b)=>b[1]-a[1]).map(([vendedor,qtd])=>({vendedor,qtd}));
 
   const goals = loadGoals();
@@ -7147,7 +7527,7 @@ function renderCommandBarClassif() {
 }
 
 function calcPipelineHealthScore(ctx) {
-  const ativos = cards.filter(c => c.column !== 'GANHO' && c.column !== 'PERDIDO');
+  const ativos = myCards().filter(c => c.column !== 'GANHO' && c.column !== 'PERDIDO');
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const total = ativos.length;
   if (total === 0) return { score: 0, components: [] };
@@ -7225,7 +7605,7 @@ function renderPipelineHealth(ctx) {
 
 function classifyDeals() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
-  const ativos = cards.filter(c => c.column !== 'GANHO' && c.column !== 'PERDIDO');
+  const ativos = myCards().filter(c => c.column !== 'GANHO' && c.column !== 'PERDIDO');
   const tierOrder = { E:0, G:1, M:2, P:3 };
   const result = { fechar:[], risco:[], cultivar:[], descartar:[] };
 
@@ -7297,7 +7677,7 @@ function ceoBriefing() {
   const hoje7 = new Date(); hoje7.setHours(0,0,0,0);
   const fim7  = new Date(hoje7); fim7.setDate(fim7.getDate()+7);
   const agendaCtx = [];
-  cards.forEach(card => {
+  myCards().forEach(card => {
     if(card.column==='GANHO'||card.column==='PERDIDO') return;
     const nome = card.type==='empresa'?(card.fantasia||card.name):card.name;
     (card.appointments||[]).filter(a=>!a.cumprido&&a.date).forEach(a=>{
@@ -7431,7 +7811,7 @@ async function ceoAsk(userMsg) {
   const _hoje7c = new Date(); _hoje7c.setHours(0,0,0,0);
   const _fim7c  = new Date(_hoje7c); _fim7c.setDate(_fim7c.getDate()+7);
   const agendaCtxChat = [];
-  cards.forEach(card => {
+  myCards().forEach(card => {
     if(card.column==='GANHO'||card.column==='PERDIDO') return;
     const _nome = card.type==='empresa'?(card.fantasia||card.name):card.name;
     (card.appointments||[]).filter(a=>!a.cumprido&&a.date).forEach(a=>{
@@ -7666,7 +8046,7 @@ function renderPipelineView() {
   if(!container) return;
 
   const today = todayIso();
-  const activeCards = cards.filter(c=>c.column!=='GANHO'&&c.column!=='PERDIDO');
+  const activeCards = myCards().filter(c=>c.column!=='GANHO'&&c.column!=='PERDIDO');
 
   // Separar deals com e sem próximo compromisso
   const withAppt = [];
@@ -7753,7 +8133,7 @@ function ceoAgendaSemana() {
   const fim  = new Date(hoje); fim.setDate(fim.getDate()+7);
 
   const proxAppts = [];
-  cards.forEach(card => {
+  myCards().forEach(card => {
     if(card.column==='GANHO'||card.column==='PERDIDO') return;
     const nome = card.type==='empresa'?(card.fantasia||card.name):card.name;
     (card.appointments||[]).filter(a=>!a.cumprido&&a.date).forEach(a=>{
@@ -7763,7 +8143,7 @@ function ceoAgendaSemana() {
   });
   proxAppts.sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
 
-  const paradosSemAppt = cards.filter(c=>c.column!=='GANHO'&&c.column!=='PERDIDO'&&isCardParado(c)&&!(c.appointments||[]).some(a=>!a.cumprido));
+  const paradosSemAppt = myCards().filter(c=>c.column!=='GANHO'&&c.column!=='PERDIDO'&&isCardParado(c)&&!(c.appointments||[]).some(a=>!a.cumprido));
 
   let prompt = 'Analise minha agenda dos próximos 7 dias e os deals sem atividade:\n\n';
   if(proxAppts.length) {
@@ -7788,7 +8168,7 @@ function saveAgendaEvents(evs) { localStorage.setItem('agenda_events_v1', JSON.s
 // Build all events to display: custom events + appointments from cards
 function getAllDisplayEvents() {
   const evs = agendaFilterCardId ? [] : loadAgendaEvents().map(e=>({...e, _source:'agenda'}));
-  const cardsToShow = agendaFilterCardId ? cards.filter(c=>c.id===agendaFilterCardId) : cards;
+  const cardsToShow = agendaFilterCardId ? cards.filter(c=>c.id===agendaFilterCardId) : myCards();
   cardsToShow.forEach(card => {
     (card.appointments||[]).forEach((appt, idx) => {
       if(!appt.date) return;
@@ -9964,7 +10344,11 @@ function saveVendors(v) { localStorage.setItem('funil_vendors_v1', JSON.stringif
 function populateResponsavelSelect(current) {
   var sel = document.getElementById('f-responsavel');
   if (!sel) return;
-  var vendors = loadVendors();
+  var vendors = loadVendors().slice(); /* cópia para não mutar o original */
+  /* Garante que o nome do usuário logado está sempre disponível como opção */
+  if (currentUser && currentUser.name && vendors.indexOf(currentUser.name) === -1) {
+    vendors.push(currentUser.name);
+  }
   sel.innerHTML = '<option value="">Não atribuído</option>' +
     vendors.map(function(v) { return '<option value="' + v + '"' + (v === current ? ' selected' : '') + '>' + v + '</option>'; }).join('');
 }
@@ -10121,7 +10505,7 @@ function populateDashVendorFilter() {
   var sel = document.getElementById('dash-vendor-filter');
   if (!sel) return;
   var vendors = [];
-  cards.forEach(function(c) { if (c.responsavel && vendors.indexOf(c.responsavel) === -1) vendors.push(c.responsavel); });
+  myCards().forEach(function(c) { if (c.responsavel && vendors.indexOf(c.responsavel) === -1) vendors.push(c.responsavel); });
   vendors.sort();
   var current = sel.value;
   sel.innerHTML = '<option value="">👥 Todos os vendedores</option>';
@@ -10134,9 +10518,10 @@ function populateDashVendorFilter() {
 }
 
 function getFilteredCards(period) {
+  var _mc = myCards();
   var base = v31DashVendor
-    ? cards.filter(function(c) { return (c.responsavel || '') === v31DashVendor; })
-    : cards;
+    ? _mc.filter(function(c) { return (c.responsavel || '') === v31DashVendor; })
+    : _mc;
   if (!period || period === 'all') return base;
   var cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - parseInt(period));
@@ -10148,9 +10533,10 @@ function getFilteredCards(period) {
 
 function getPrevPeriodCards(period) {
   if (!period || period === 'all') return [];
+  var _mc = myCards();
   var base = v31DashVendor
-    ? cards.filter(function(c) { return (c.responsavel || '') === v31DashVendor; })
-    : cards;
+    ? _mc.filter(function(c) { return (c.responsavel || '') === v31DashVendor; })
+    : _mc;
   var n = parseInt(period);
   var now = new Date();
   var end = new Date(now); end.setDate(end.getDate() - n);
@@ -10813,6 +11199,14 @@ function deleteCardDirect(cardId) {
   closeAllCardMenus();
   var c = cards.find(function(x){ return x.id === cardId; });
   if (!c) return;
+  /* Verifica permissão: member só pode excluir seus próprios cards */
+  if (currentUserRole === 'member' && currentUser) {
+    var isMine = (c.responsavel === currentUser.name || c.createdBy === currentUser.id);
+    if (!isMine) {
+      showToast('⚠️ Você só pode excluir deals atribuídos a você.');
+      return;
+    }
+  }
   var nome = c.fantasia || c.name || 'este registro';
   showConfirm(
     'Mover "' + nome + '" para a lixeira?\nVocê poderá restaurá-lo em até 30 dias.',
@@ -10978,6 +11372,14 @@ function v32RestoreCard(cardId) {
   var trash = v32LoadTrash();
   var item  = trash.find(function(x) { return x.id === cardId; });
   if (!item) return;
+  /* Verifica permissão: member só restaura seus próprios cards */
+  if (currentUserRole === 'member' && currentUser) {
+    var isMine = (item.responsavel === currentUser.name || item.createdBy === currentUser.id);
+    if (!isMine) {
+      showToast('⚠️ Você só pode restaurar deals que eram seus.');
+      return;
+    }
+  }
   /* Limpar campos da lixeira antes de restaurar */
   var restored = Object.assign({}, item);
   delete restored._deletedAt;
@@ -11049,6 +11451,8 @@ function v32RenderTrashPanel() {
       var diasRest  = 30 - diasAtras;
       var badgeCls  = diasRest <= 5 ? 'expiring' : 'ok';
       var col       = COLUMNS.find(function(col) { return col.id === c.column; });
+      var isMyCard = !currentUser || currentUserRole === 'admin' ||
+        (c.responsavel === currentUser.name || c.createdBy === currentUser.id);
       return '<div class="trash-item">' +
         '<div class="trash-item-icon">🗑️</div>' +
         '<div class="trash-item-info">' +
@@ -11061,8 +11465,8 @@ function v32RenderTrashPanel() {
           '</div>' +
         '</div>' +
         '<div class="trash-item-actions">' +
-          '<button class="btn-restore" onclick="v32RestoreCard(' + c.id + ')">↩️ Restaurar</button>' +
-          '<button class="btn-perm-delete" onclick="v32PermanentDelete(' + c.id + ')" title="Apagar definitivamente">✕</button>' +
+          (isMyCard ? '<button class="btn-restore" onclick="v32RestoreCard(' + c.id + ')">↩️ Restaurar</button>' : '') +
+          (isMyCard ? '<button class="btn-perm-delete" onclick="v32PermanentDelete(' + c.id + ')" title="Apagar definitivamente">✕</button>' : '') +
         '</div>' +
       '</div>';
     }).join('');
