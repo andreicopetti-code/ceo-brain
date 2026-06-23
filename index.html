@@ -5395,6 +5395,8 @@ async function loadUserOrganization(orgId) {
     if (dropSettings) dropSettings.style.display = currentUserRole === 'admin' ? 'flex' : 'none';
     
     console.log('Organização carregada:', orgId, 'Role:', currentUserRole);
+    /* Garante que o filtro de responsavel reflete o role correto apos carga */
+    renderBoard();
     
   } catch (e) {
     console.error('Erro ao carregar organização:', e);
@@ -5665,34 +5667,70 @@ function v40InitUserFromSession(session) {
 function initAuth() {
   checkInviteRoute();
 
-  // ── Detectar token de recuperação de senha no hash da URL ──────────────
-  var hash = window.location.hash || '';
-  if (hash) {
-    var params = {};
-    hash.replace(/^#/, '').split('&').forEach(function(pair) {
-      var kv = pair.split('=');
-      params[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' '));
-    });
+  // ── Detectar token de recuperação de senha (hash OU query string) ─────────
+  // Supabase pode enviar via hash (#access_token=...) ou via PKCE (?code=...)
+  var hashStr  = (window.location.hash  || '').replace(/^#/, '');
+  var queryStr = (window.location.search|| '').replace(/^\?/, '');
 
-    if (params.error) {
-      // Link expirado ou inválido — mostra mensagem clara no painel forgot
+  function parseUrlParams(str) {
+    var p = {};
+    str.split('&').forEach(function(pair) {
+      if (!pair) return;
+      var idx = pair.indexOf('=');
+      var k = idx >= 0 ? pair.slice(0, idx) : pair;
+      var v = idx >= 0 ? pair.slice(idx + 1) : '';
+      try { p[decodeURIComponent(k)] = decodeURIComponent(v.replace(/\+/g, ' ')); } catch(e) {}
+    });
+    return p;
+  }
+
+  var hashParams  = parseUrlParams(hashStr);
+  var queryParams = parseUrlParams(queryStr);
+
+  // Erro vindo da URL (link expirado etc.)
+  if (hashParams.error || queryParams.error) {
+    document.getElementById('login-overlay').classList.remove('hidden');
+    v40ShowTab('forgot');
+    v40SetError('forgot', 'O link de recuperação expirou ou é inválido. Solicite um novo abaixo.');
+    history.replaceState(null, '', window.location.pathname);
+    return;
+  }
+
+  // Fluxo implícito via hash: #access_token=...&type=recovery
+  if (hashParams.type === 'recovery' && hashParams.access_token) {
+    window._recoveryToken = hashParams.access_token;
+    document.getElementById('login-overlay').classList.remove('hidden');
+    v40ShowTab('reset');
+    history.replaceState(null, '', window.location.pathname);
+    return;
+  }
+
+  // Fluxo PKCE via query string: ?code=... (Supabase v2+)
+  if (queryParams.code) {
+    (async function() {
+      try {
+        var res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=pkce', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+          body: JSON.stringify({ auth_code: queryParams.code })
+        });
+        var data = await res.json();
+        if (res.ok && data.access_token) {
+          window._recoveryToken = data.access_token;
+          document.getElementById('login-overlay').classList.remove('hidden');
+          v40ShowTab('reset');
+          history.replaceState(null, '', window.location.pathname);
+          return;
+        }
+      } catch(e) {}
       document.getElementById('login-overlay').classList.remove('hidden');
       v40ShowTab('forgot');
       v40SetError('forgot', 'O link de recuperação expirou ou é inválido. Solicite um novo abaixo.');
       history.replaceState(null, '', window.location.pathname);
-      return;
-    }
-
-    if (params.type === 'recovery' && params.access_token) {
-      // Salvar token temporário para usar na troca de senha
-      window._recoveryToken = params.access_token;
-      document.getElementById('login-overlay').classList.remove('hidden');
-      v40ShowTab('reset');
-      history.replaceState(null, '', window.location.pathname);
-      return;
-    }
+    })();
+    return;
   }
-  // ── Fim detecção de recuperação ─────────────────────────────────────────
+  // ── Fim detecção de recuperação ───────────────────────────────────────
 
   var saved = v40LoadSession();
   if (saved && saved.access_token) {
@@ -6121,8 +6159,25 @@ async function v40SyncToCloud() {
 var activeRespFilter = '';
 
 function populateRespFilter() {
-  var sel = document.getElementById('filter-resp');
+  var sel     = document.getElementById('filter-resp');
+  var toolbar = document.getElementById('board-toolbar');
   if (!sel) return;
+
+  /* Somente Gestor (admin) ve o filtro "Ver: [Todos]".
+     Members nao precisam: o funil exibe os deals da org normalmente. */
+  var isAdmin = (currentUserRole === 'admin');
+  if (!isAdmin) {
+    sel.style.display = 'none';
+    var lbl = toolbar ? toolbar.querySelector('.board-toolbar-label') : null;
+    if (lbl) lbl.style.display = 'none';
+    activeRespFilter = '';
+    return;
+  }
+
+  sel.style.display = '';
+  var lbl2 = toolbar ? toolbar.querySelector('.board-toolbar-label') : null;
+  if (lbl2) lbl2.style.display = '';
+
   var vendors = [''];
   cards.forEach(function(c) {
     var r = (c.responsavel || '').trim();
