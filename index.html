@@ -6857,7 +6857,7 @@ function showView(view) {
   const isEmail    = view === 'email';
 
   document.getElementById('board').style.display              = isFunil ? 'flex'  : 'none';
-  document.getElementById('board-toolbar').style.display      = isFunil ? 'flex'  : 'none';
+  document.getElementById('board-toolbar').style.display      = (isFunil && currentUserRole === 'admin') ? 'flex' : 'none';
   document.getElementById('contacts-panel').classList.toggle('open', isContacts);
   document.getElementById('settings-panel').classList.toggle('open', isSettings);
   document.getElementById('ceo-panel').classList.toggle('open', isCeo);
