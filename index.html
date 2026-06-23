@@ -5028,7 +5028,15 @@ function saveCard() {
     note:       document.getElementById('f-note').value.trim(),
     origem:     document.getElementById('f-origem').value,
     /* V25 */
-    responsavel: document.getElementById('f-responsavel')?.value || '',
+    responsavel: (function() {
+      var selVal = (document.getElementById('f-responsavel')?.value || '').trim();
+      /* Se o select ficou vazio mas o card já tinha responsável, preserva o valor original */
+      if (!selVal && editingId) {
+        var orig = cards.find(function(c) { return c.id === editingId; });
+        return (orig && orig.responsavel) ? orig.responsavel : '';
+      }
+      return selVal;
+    })(),
     tags:        [...v25Tags],
   };
 
@@ -10348,6 +10356,10 @@ function populateResponsavelSelect(current) {
   /* Garante que o nome do usuário logado está sempre disponível como opção */
   if (currentUser && currentUser.name && vendors.indexOf(currentUser.name) === -1) {
     vendors.push(currentUser.name);
+  }
+  /* Garante que o responsável atual do card está disponível mesmo fora da lista */
+  if (current && vendors.indexOf(current) === -1) {
+    vendors.push(current);
   }
   sel.innerHTML = '<option value="">Não atribuído</option>' +
     vendors.map(function(v) { return '<option value="' + v + '"' + (v === current ? ' selected' : '') + '>' + v + '</option>'; }).join('');
