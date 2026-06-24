@@ -120,7 +120,10 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
   .logo-text span { color: var(--blue); }
   /* Centered nav using flex — no more position:absolute */
-  .header-nav { display: flex; gap: 3px; align-items: center; flex: 1; justify-content: center; min-width: 0; overflow: hidden; }
+  .header-nav { display: flex; gap: 3px; align-items: center; overflow-x: auto; overflow-y: hidden; flex-shrink: 1; min-width: 0; scrollbar-width: none; }
+  .header-nav::-webkit-scrollbar { display: none; }
+  .header-nav .btn-contacts span, .header-nav .btn-ceo span { display: none; }
+  @media (min-width: 1600px) { .header-nav .btn-contacts span, .header-nav .btn-ceo span { display: inline; } .btn-contacts { padding: 7px 13px; } .btn-ceo { padding: 7px 13px; } }
   .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; margin-left: auto; }
   .search-box { padding: 7px 32px 7px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-family: inherit; background: var(--surface2); color: var(--text); outline: none; width: 200px; transition: border-color .2s, width .2s; }
   .search-box:focus { border-color: var(--blue); background: var(--surface); width: 240px; box-shadow: 0 0 0 3px var(--blue-bg); }
@@ -205,7 +208,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   .board::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
   .column { flex: 1 1 0; min-width: 120px; background: var(--surface2); border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; transition: border-color .2s, background .2s; }
-  .column.drag-over { border-style: dashed; border-width: 2px; }
+  .column.drag-over { border-style: dashed; border-width: 2px; border-color: var(--blue); background: var(--blue-bg); box-shadow: inset 0 0 0 1px var(--blue); }
   .col-header { padding: 10px 12px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .col-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
   .col-name { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
@@ -369,7 +372,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 
   /* ---- CONTACTS PANEL ---- */
-  .btn-contacts { padding: 7px 13px; background: transparent; color: var(--text2); border: 1px solid var(--border2); border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .btn-contacts { padding: 7px 10px; background: transparent; color: var(--text2); border: 1px solid var(--border2); border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
   .btn-contacts:hover { background: var(--surface2); color: var(--text); }
   .btn-contacts.active { background: var(--blue-bg); color: var(--blue-dark); border-color: #B6D4F5; }
   .btn-contacts:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
@@ -579,7 +582,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   .btn-exit:hover { background: var(--red-bg); }
 
   /* ---- CEO BRAIN 2.0 ---- */
-  .btn-ceo { padding: 7px 13px; background: transparent; color: var(--text2); border: 1px solid var(--border2); border-radius: 8px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px; letter-spacing:.01em; }
+  .btn-ceo { padding: 7px 10px; background: transparent; color: var(--text2); border: 1px solid var(--border2); border-radius: 8px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px; letter-spacing:.01em; }
   .btn-ceo:hover { background: var(--surface2); color: var(--text); }
   .btn-ceo.active { background: var(--blue-bg); color: var(--blue-dark); border-color: #B6D4F5; }
   .btn-ceo:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
@@ -1328,11 +1331,13 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   .login-success { background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #15803D; margin-bottom: 16px; display: none; }
   .login-success.show { display: block; }
   .login-btn-loading { opacity: .6; pointer-events: none; }
-  .sync-indicator { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); padding: 2px 8px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); transition: all .3s; }
-  .sync-indicator.syncing { color: var(--blue-dark); background: var(--blue-bg); border-color: #B6D4F5; }
-  .sync-indicator.synced { color: #15803D; background: #F0FDF4; border-color: #86EFAC; }
-  .sync-indicator.error { color: var(--red); background: var(--red-bg); border-color: #FCA5A5; }
-  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .sync-indicator { display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; transition: all .3s; padding: 0; }
+  .sync-indicator.syncing { }
+  .sync-indicator.synced { }
+  .sync-indicator.error { }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+  .sync-indicator.syncing .sync-dot { background: var(--blue); }
+  .sync-indicator.error .sync-dot { background: var(--red); }
   .sync-dot.pulse { animation: syncPulse .8s ease-in-out infinite; }
   @keyframes syncPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
   .login-error { background: var(--red-bg); border: 1px solid #F5BFBF; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 16px; display: none; }
@@ -1631,23 +1636,23 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   /* ---- IMPROVED MOBILE BREAKPOINTS ---- */
   @media (max-width: 1024px) {
     .column { min-width: 110px; }
-    .search-box { width: 160px; }
-    .search-box:focus { width: 180px; }
+  }
+  @media (max-width: 1280px) {
+    .header { gap: 6px; }
+    .header-nav { gap: 2px; }
+    .search-box { width: 130px; }
+    .search-shortcut { display: none; }
   }
   @media (max-width: 768px) {
-    .header { padding: 0 12px; gap: 8px; }
-    .header-nav { gap: 2px; }
-    .btn-contacts span, .btn-ceo span { display: none; }
-    .btn-contacts, .btn-ceo { padding: 7px 9px; }
-    .btn-contacts svg, .btn-ceo svg { width: 16px; height: 16px; }
+    .header { padding: 0 12px; gap: 4px; }
+    .header-nav { gap: 1px; }
     .stats-bar { padding: 8px 12px; gap: 6px; flex-wrap: wrap; }
     .stat-card { min-width: calc(33% - 6px); flex: 0 1 calc(33% - 6px); }
     .board { padding: 12px; gap: 8px; overflow-x: auto; }
     .column { min-width: 200px; flex: 0 0 200px; }
     .form-row.cols2 { grid-template-columns: 1fr; }
     .cnpj-wrapper { flex-direction: column; align-items: stretch; }
-    .search-box { width: 120px; }
-    .search-shortcut { display: none; }
+    .search-box { width: 100px; }
   }
   @media (max-width: 480px) {
     .header-nav .btn-contacts:nth-child(n+4), .header-nav .btn-ceo { }
@@ -2162,11 +2167,11 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   <!-- Navigation — flexbox centered, no position:absolute -->
   <nav class="header-nav" role="navigation" aria-label="Navegação principal">
     <button id="tab-funil" class="btn-contacts active" onclick="showView(&#39;funil&#39;)" aria-label="Funil de vendas">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v3H3V4zm0 5.5h13v3H3v-3zm0 5.5h18v3H3v-3z"></path></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="3" rx="1"/><rect x="4" y="8" width="15" height="3" rx="1"/><rect x="7" y="13" width="9" height="3" rx="1"/><rect x="10" y="18" width="4" height="3" rx="1"/></svg>
       <span>Funil</span>
     </button>
     <button id="tab-dashboard" class="btn-contacts" onclick="showView(&#39;dashboard&#39;)" aria-label="Dashboard">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"></path></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="16" width="4" height="6" rx="1"/><rect x="8" y="11" width="4" height="11" rx="1"/><rect x="14" y="6" width="4" height="16" rx="1"/><rect x="20" y="13" width="2" height="9" rx="1"/><line x1="1" y1="22" x2="23" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span>Dashboard</span>
     </button>
     <button id="tab-contacts" class="btn-contacts" onclick="showView(&#39;contacts&#39;)" aria-label="Contatos">
@@ -2178,7 +2183,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
       <span>Agenda</span>
     </button>
     <button id="tab-ceo" class="btn-ceo" onclick="showView(&#39;ceo&#39;)" aria-label="CEO Brain IA">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3C10.23 3 8 5.23 8 8c0 .55.07 1.08.2 1.59C7.47 9.22 6.76 9 6 9c-1.66 0-3 1.34-3 3 0 1.3.84 2.4 2 2.82V15c0 1.86 1.28 3.41 3 3.86V21h2v-2h2v2h2v-2.14c1.72-.45 3-2 3-3.86v-.18c1.16-.42 2-1.52 2-2.82 0-1.66-1.34-3-3-3-.76 0-1.47.22-2.08.59.02-.19.08-.38.08-.59 0-2.77-2.23-5-5-5zm0 2c1.65 0 3 1.35 3 3 0 .18-.04.35-.07.52C15.35 8.2 14.7 8 14 8h-2c-1.04 0-1.96.42-2.63 1.1C9.14 8.78 9 8.4 9 8c0-1.65 1.35-3 3-3zm-5 6h2c.96 0 1.82.45 2.4 1.14C12.88 12.71 12.74 13 12.74 13H11v2h2v-1.26c.64.14 1.09.58 1.26 1.26H11v2h4c0 1.1-.9 2-2 2H9c-1.1 0-2-.9-2-2v-4c0-.55.45-1 1-1zm9 0c.55 0 1 .45 1 1s-.45 1-1 1-.45-1-1-1 .45-1 1-1zm-12 0c.55 0 1 .45 1 1v1h-1v-1c-.55 0-1-.45-1-1s.45-1 1-1z"></path></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 L14 9 L21 11 L14 13 L12 20 L10 13 L3 11 L10 9 Z"/></svg>
       <span>CEO Brain</span>
     </button>
     <button id="tab-automacoes" class="btn-contacts" onclick="showView(&#39;automacoes&#39;)" aria-label="Automações">
@@ -2230,9 +2235,8 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
     <!-- 8. Créditos / Avatar -->
     <!-- v40 sync indicator -->
-    <div id="v40-sync-indicator" class="sync-indicator synced" style="margin-right:4px;cursor:pointer" title="Clique para ver diagnóstico" onclick="v40ShowDiagnostic()">
+    <div id="v40-sync-indicator" class="sync-indicator synced" style="cursor:pointer;margin-right:2px" title="Clique para ver diagnóstico" onclick="v40ShowDiagnostic()">
       <div class="sync-dot"></div>
-      <span class="sync-label">Sincronizado</span>
     </div>
     <div class="user-menu-wrap">
       <button class="btn-user-avatar" id="btn-user-avatar" onclick="toggleUserMenu()" aria-label="Menu do usuário" aria-haspopup="true" title="leandro.copetti@copettisantos.com.br (Membro) — clique para menu">
@@ -2278,7 +2282,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 </div>
 <!-- BOARD -->
 <div class="board" id="board" style="display: flex;">
-    <div class="column col-gargalo" id="col-LEADS" ondragover="onDragOver(event,&#39;LEADS&#39;)" ondrop="onDrop(event,&#39;LEADS&#39;)" ondragleave="onDragLeave(&#39;LEADS&#39;)">
+    <div class="column col-gargalo" id="col-LEADS" ondragover="onDragOver(event,&#39;LEADS&#39;)" ondrop="onDrop(event,&#39;LEADS&#39;)" ondragleave="onDragLeave('LEADS',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:#2563EB;border-bottom:2px solid #2563EB">Leads</span>
@@ -2381,7 +2385,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
     <div class="card-appt-row" style="margin-top:2px"><span style="font-size:10px;color:var(--text3);font-weight:500;flex:1">Agende um compromisso</span><button class="card-quick-sched" onclick="event.stopPropagation();quickScheduleCard(13)" title="Agendar compromisso">+</button></div>
   </div></div>
     </div>
-    <div class="column" id="col-QUALIFICADO" ondragover="onDragOver(event,&#39;QUALIFICADO&#39;)" ondrop="onDrop(event,&#39;QUALIFICADO&#39;)" ondragleave="onDragLeave(&#39;QUALIFICADO&#39;)">
+    <div class="column" id="col-QUALIFICADO" ondragover="onDragOver(event,&#39;QUALIFICADO&#39;)" ondrop="onDrop(event,&#39;QUALIFICADO&#39;)" ondragleave="onDragLeave('QUALIFICADO',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:#D97706;border-bottom:2px solid #D97706">Qualificado</span>
@@ -2432,7 +2436,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
     <div class="card-appt-row" style="margin-top:2px"><span style="font-size:10px;color:var(--text3);font-weight:500;flex:1">Agende um compromisso</span><button class="card-quick-sched" onclick="event.stopPropagation();quickScheduleCard(9)" title="Agendar compromisso">+</button></div>
   </div></div>
     </div>
-    <div class="column" id="col-REUNIÃO" ondragover="onDragOver(event,&#39;REUNIÃO&#39;)" ondrop="onDrop(event,&#39;REUNIÃO&#39;)" ondragleave="onDragLeave(&#39;REUNIÃO&#39;)">
+    <div class="column" id="col-REUNIÃO" ondragover="onDragOver(event,&#39;REUNIÃO&#39;)" ondrop="onDrop(event,&#39;REUNIÃO&#39;)" ondragleave="onDragLeave('REUNIÃO',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:#7C3AED;border-bottom:2px solid #7C3AED">Reunião</span>
@@ -2472,7 +2476,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
     <div class="card-appt-row" style="margin-top:2px"><span style="font-size:10px;color:var(--text3);font-weight:500;flex:1">Agende um compromisso</span><button class="card-quick-sched" onclick="event.stopPropagation();quickScheduleCard(8)" title="Agendar compromisso">+</button></div>
   </div></div>
     </div>
-    <div class="column" id="col-PROPOSTA_ENVIADA" ondragover="onDragOver(event,&#39;PROPOSTA_ENVIADA&#39;)" ondrop="onDrop(event,&#39;PROPOSTA_ENVIADA&#39;)" ondragleave="onDragLeave(&#39;PROPOSTA_ENVIADA&#39;)">
+    <div class="column" id="col-PROPOSTA_ENVIADA" ondragover="onDragOver(event,&#39;PROPOSTA_ENVIADA&#39;)" ondrop="onDrop(event,&#39;PROPOSTA_ENVIADA&#39;)" ondragleave="onDragLeave('PROPOSTA_ENVIADA',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:#0891B2;border-bottom:2px solid #0891B2">Proposta</span>
@@ -2501,7 +2505,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
     <div class="card-appt-row" style="margin-top:2px"><span style="font-size:10px;color:var(--text3);font-weight:500;flex:1">Agende um compromisso</span><button class="card-quick-sched" onclick="event.stopPropagation();quickScheduleCard(4)" title="Agendar compromisso">+</button></div>
   </div></div>
     </div>
-    <div class="column" id="col-NEGOCIAÇÃO" ondragover="onDragOver(event,&#39;NEGOCIAÇÃO&#39;)" ondrop="onDrop(event,&#39;NEGOCIAÇÃO&#39;)" ondragleave="onDragLeave(&#39;NEGOCIAÇÃO&#39;)">
+    <div class="column" id="col-NEGOCIAÇÃO" ondragover="onDragOver(event,&#39;NEGOCIAÇÃO&#39;)" ondrop="onDrop(event,&#39;NEGOCIAÇÃO&#39;)" ondragleave="onDragLeave('NEGOCIAÇÃO',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:#EA580C;border-bottom:2px solid #EA580C">Negociação</span>
@@ -2515,7 +2519,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
       </div>
       <div class="col-cards"></div>
     </div>
-    <div class="column" id="col-GANHO" ondragover="onDragOver(event,&#39;GANHO&#39;)" ondrop="onDrop(event,&#39;GANHO&#39;)" ondragleave="onDragLeave(&#39;GANHO&#39;)">
+    <div class="column" id="col-GANHO" ondragover="onDragOver(event,&#39;GANHO&#39;)" ondrop="onDrop(event,&#39;GANHO&#39;)" ondragleave="onDragLeave('GANHO',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:#16A34A;border-bottom:2px solid #16A34A">Ganho</span>
@@ -2529,7 +2533,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
       </div>
       <div class="col-cards"></div>
     </div>
-    <div class="column" id="col-PERDIDO" ondragover="onDragOver(event,&#39;PERDIDO&#39;)" ondrop="onDrop(event,&#39;PERDIDO&#39;)" ondragleave="onDragLeave(&#39;PERDIDO&#39;)">
+    <div class="column" id="col-PERDIDO" ondragover="onDragOver(event,&#39;PERDIDO&#39;)" ondrop="onDrop(event,&#39;PERDIDO&#39;)" ondragleave="onDragLeave('PERDIDO',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:#DC2626;border-bottom:2px solid #DC2626">Perdido</span>
@@ -4451,7 +4455,7 @@ function renderBoard() {
     <div class="column${isGargalo?' col-gargalo':''}" id="col-${col.id}"
       ondragover="onDragOver(event,'${col.id}')"
       ondrop="onDrop(event,'${col.id}')"
-      ondragleave="onDragLeave('${col.id}')">
+      ondragleave="onDragLeave('${col.id}',event)">
       <div class="col-header">
         <div class="col-top">
           <span class="col-name" style="color:${col.color};border-bottom:2px solid ${col.color}">${col.label}</span>
@@ -4651,8 +4655,11 @@ function onDragOver(e, colId) {
   document.getElementById('col-' + colId).classList.add('drag-over');
 }
 
-function onDragLeave(colId) {
-  document.getElementById('col-' + colId).classList.remove('drag-over');
+function onDragLeave(colId, e) {
+  // Só remove se o cursor saiu para fora da coluna (não para um filho)
+  var col = document.getElementById('col-' + colId);
+  if (e && e.relatedTarget && col.contains(e.relatedTarget)) return;
+  col.classList.remove('drag-over');
 }
 
 function clearDropIndicators() {
@@ -7842,8 +7849,12 @@ async function ceoCallAPI(singlePrompt, isBriefing, apiMessages) {
   document.getElementById('ceo-refresh-btn').disabled = true;
   const typingId = 'ceo-typing-' + Date.now();
   const msgs = document.getElementById('ceo-messages');
-  msgs.innerHTML += `<div class="ceo-msg" id="${typingId}"><div class="ceo-msg-avatar ai" style="font-size:10px;font-weight:700;letter-spacing:-.5px">CEO</div><div class="ceo-msg-bubble"><div class="ceo-typing"><div class="ceo-typing-dot"></div><div class="ceo-typing-dot"></div><div class="ceo-typing-dot"></div></div></div></div>`;
-  msgs.scrollTop = msgs.scrollHeight;
+  const typingEl = document.createElement('div');
+  typingEl.className = 'ceo-msg';
+  typingEl.id = typingId;
+  typingEl.innerHTML = `<div class="ceo-msg-avatar ai" style="font-size:10px;font-weight:700;letter-spacing:-.5px">CEO</div><div class="ceo-msg-bubble"><div class="ceo-typing"><div class="ceo-typing-dot"></div><div class="ceo-typing-dot"></div><div class="ceo-typing-dot"></div></div></div>`;
+  msgs.appendChild(typingEl);
+  setTimeout(() => { typingEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
 
   try {
     const apiKey = loadApiKey();
@@ -7924,8 +7935,16 @@ function addCeoMessage(role, content, isHtml) {
     ? `<div class="ceo-msg-avatar user">${userInitials}</div>`
     : `<div class="ceo-msg-avatar ai" style="font-size:10px;font-weight:700;letter-spacing:-.5px">CEO</div>`;
   const bub  = isHtml ? `<div class="ceo-msg-bubble">${content}</div>` : `<div class="ceo-msg-bubble">${content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
-  msgs.innerHTML += `<div class="ceo-msg ${cls}">${av}${bub}</div>`;
-  msgs.scrollTop = msgs.scrollHeight;
+  const msgEl = document.createElement('div');
+  msgEl.className = `ceo-msg ${cls}`;
+  msgEl.innerHTML = av + bub;
+  msgs.appendChild(msgEl);
+  if (role === 'ai') {
+    // Rola para o topo da mensagem da IA
+    setTimeout(() => { msgEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  } else {
+    msgs.scrollTop = msgs.scrollHeight;
+  }
 }
 /* ================================================================
    AGENDA — Calendário com eventos, tarefas e integração CEO
